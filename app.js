@@ -2,17 +2,9 @@
  * DEAD BY STATS - SCOREBOARD HUD CALCULATOR LOGIC
  */
 
-// --- DEPURADOR DE ERRORES REMOTOS ---
-window.addEventListener("error", (e) => {
-  alert("ERROR EN VIVO:\n" + e.message + "\nEn: " + e.filename + ":" + e.lineno);
-});
-window.addEventListener("unhandledrejection", (e) => {
-  alert("PROMEZA RECHAZADA:\n" + e.reason);
-});
-
 // --- VARIABLES DE ESTADO ---
 let playersData = [];
-let supabase = null;
+let supabaseClient = null;
 let realtimeChannel = null;
 
 // --- INICIALIZACIÓN ---
@@ -28,15 +20,15 @@ function initSupabase() {
   const key = localStorage.getItem("dbd_supabase_key");
   if (url && key) {
     try {
-      // Instanciar cliente desde la librería cargada por CDN
-      supabase = window.supabase.createClient(url, key);
+      // Instanciar cliente desde la librería cargada por CDN (global 'supabase')
+      supabaseClient = window.supabase.createClient(url, key);
       return true;
     } catch (e) {
       console.error("Error al instanciar Supabase:", e);
-      supabase = null;
+      supabaseClient = null;
     }
   }
-  supabase = null;
+  supabaseClient = null;
   return false;
 }
 
@@ -47,7 +39,7 @@ async function loadData() {
   if (hasSupabase) {
     try {
       // Intentar consultar la tabla de jugadores
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("players")
         .select("*")
         .order("id", { ascending: true });
@@ -131,11 +123,11 @@ function saveData() {
 
 // --- ACTUALIZAR REGISTROS DE JUGADORES A SUPABASE ---
 async function pushAllDataToSupabase() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   try {
     for (let i = 0; i < 4; i++) {
       const p = playersData[i] || { name: "", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } };
-      await supabase.from("players").upsert({
+      await supabaseClient.from("players").upsert({
         id: i,
         name: p.name,
         moris: p.stats.moris,
@@ -151,13 +143,13 @@ async function pushAllDataToSupabase() {
 
 // --- SUSCRIPCIÓN EN TIEMPO REAL (REALTIME DE SUPABASE) ---
 function subscribeRealtime() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   
   if (realtimeChannel) {
-    supabase.removeChannel(realtimeChannel);
+    supabaseClient.removeChannel(realtimeChannel);
   }
 
-  realtimeChannel = supabase
+  realtimeChannel = supabaseClient
     .channel("public-players-changes")
     .on(
       "postgres_changes",
@@ -181,10 +173,10 @@ function subscribeRealtime() {
 
 // --- ENVIAR ACTUALIZACIÓN DE CONTADORES A BASE DE DATOS ---
 async function updatePlayerStat(playerIdx, statName, value) {
-  if (supabase) {
+  if (supabaseClient) {
     const dbColName = statName === "firstDeaths" ? "first_deaths" : statName;
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("players")
         .update({ [dbColName]: value })
         .eq("id", playerIdx);
@@ -364,10 +356,10 @@ function initCalculator() {
       modalReset.classList.remove("show");
 
       // Sincronizar reinicio
-      if (supabase) {
+      if (supabaseClient) {
         try {
           // Actualización de múltiples filas en Supabase
-          const { error } = await supabase
+          const { error } = await supabaseClient
             .from("players")
             .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0 })
             .in("id", [0, 1, 2, 3]);
@@ -449,7 +441,7 @@ function initCalculator() {
       
       urlInput.value = "";
       keyInput.value = "";
-      supabase = null;
+      supabaseClient = null;
       if (realtimeChannel) {
         realtimeChannel.unsubscribe();
         realtimeChannel = null;
