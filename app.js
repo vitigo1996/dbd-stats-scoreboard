@@ -2,6 +2,14 @@
  * DEAD BY STATS - SCOREBOARD HUD CALCULATOR LOGIC
  */
 
+// --- DEPURADOR DE ERRORES REMOTOS ---
+window.addEventListener("error", (e) => {
+  alert("ERROR EN VIVO:\n" + e.message + "\nEn: " + e.filename + ":" + e.lineno);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  alert("PROMEZA RECHAZADA:\n" + e.reason);
+});
+
 // --- VARIABLES DE ESTADO ---
 let playersData = [];
 let supabase = null;
