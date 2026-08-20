@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dead by Stats | Scoreboard HUD</title>
+  <!-- SUPABASE JS LIBRARY -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- EFECTOS AMBIENTALES DE FONDO (NIEBLA Y BRASAS) -->
+  <div class="ambient-container">
+    <div class="fog-layer"></div>
+    <div class="fog-layer-2"></div>
+    <div class="embers-container" id="embers-container"></div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL DE LA CALCULADORA -->
+  <div class="calculator-wrapper">
+    
+    <!-- TÍTULO PRINCIPAL (LOGO DBD) Y AJUSTES -->
+    <header class="calculator-header">
+      <button class="btn-settings-toggle" id="btn-settings" title="Configurar Supabase">⚙️</button>
+      <img src="logo.png" alt="DbD Logo" class="header-logo">
+      <h1 class="header-title">DEAD BY <span>STATS</span></h1>
+    </header>
+
+    <!-- TABLERO DE JUGADORES (4 FILAS) -->
+    <main class="scoreboard-container">
+      
+      <!-- FILA JUGADOR 1 (VITIGO) -->
+      <div class="player-row" data-index="0">
+        <div class="player-name-container">
+          <div class="hud-portrait-card">
+            <img src="char_vitigo.png" alt="VITIGO Character" class="hud-portrait-img">
+          </div>
+          <span class="player-name-static">VITIGO</span>
+        </div>
+        
+        <div class="player-counters">
+          <!-- Memento Mori -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">MEMENTO MORI</span>
+            <button class="btn-icon-calc" data-player="0" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="mori.png" alt="Mori">
+            </button>
+            <div class="icons-display-container" id="val-0-moris"></div>
+          </div>
+
+          <!-- Killer Ragequit -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">KILLER DC</span>
+            <button class="btn-icon-calc" data-player="0" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="dc.png" alt="DC Killer">
+            </button>
+            <div class="icons-display-container" id="val-0-dcs"></div>
+          </div>
+
+          <!-- Escapes -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">ESCAPE</span>
+            <button class="btn-icon-calc" data-player="0" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="escape.png" alt="Escapó">
+            </button>
+            <div class="icons-display-container" id="val-0-escapes"></div>
+          </div>
+
+          <!-- First Death -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">FIRST DEATH</span>
+            <button class="btn-icon-calc" data-player="0" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="first_death.png" alt="Muerto Primero">
+            </button>
+            <div class="icons-display-container" id="val-0-firstDeaths"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA JUGADOR 2 (VINZENT) -->
+      <div class="player-row" data-index="1">
+        <div class="player-name-container">
+          <div class="hud-portrait-card">
+            <img src="char_vinzent.png" alt="VINZENT Character" class="hud-portrait-img">
+          </div>
+          <span class="player-name-static">VINZENT</span>
+        </div>
+        
+        <div class="player-counters">
+          <!-- Memento Mori -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">MEMENTO MORI</span>
+            <button class="btn-icon-calc" data-player="1" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="mori.png" alt="Mori">
+            </button>
+            <div class="icons-display-container" id="val-1-moris"></div>
+          </div>
+
+          <!-- Killer Ragequit -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">KILLER DC</span>
+            <button class="btn-icon-calc" data-player="1" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="dc.png" alt="DC Killer">
+            </button>
+            <div class="icons-display-container" id="val-1-dcs"></div>
+          </div>
+
+          <!-- Escapes -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">ESCAPE</span>
+            <button class="btn-icon-calc" data-player="1" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="escape.png" alt="Escapó">
+            </button>
+            <div class="icons-display-container" id="val-1-escapes"></div>
+          </div>
+
+          <!-- First Death -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">FIRST DEATH</span>
+            <button class="btn-icon-calc" data-player="1" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="first_death.png" alt="Muerto Primero">
+            </button>
+            <div class="icons-display-container" id="val-1-firstDeaths"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA JUGADOR 3 (JOSEDVA) -->
+      <div class="player-row" data-index="2">
+        <div class="player-name-container">
+          <div class="hud-portrait-card">
+            <img src="char_jose.png" alt="JOSEDVA Character" class="hud-portrait-img">
+          </div>
+          <span class="player-name-static">JOSEDVA</span>
+        </div>
+        
+        <div class="player-counters">
+          <!-- Memento Mori -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">MEMENTO MORI</span>
+            <button class="btn-icon-calc" data-player="2" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="mori.png" alt="Mori">
+            </button>
+            <div class="icons-display-container" id="val-2-moris"></div>
+          </div>
+
+          <!-- Killer Ragequit -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">KILLER DC</span>
+            <button class="btn-icon-calc" data-player="2" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="dc.png" alt="DC Killer">
+            </button>
+            <div class="icons-display-container" id="val-2-dcs"></div>
+          </div>
+
+          <!-- Escapes -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">ESCAPE</span>
+            <button class="btn-icon-calc" data-player="2" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="escape.png" alt="Escapó">
+            </button>
+            <div class="icons-display-container" id="val-2-escapes"></div>
+          </div>
+
+          <!-- First Death -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">FIRST DEATH</span>
+            <button class="btn-icon-calc" data-player="2" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="first_death.png" alt="Muerto Primero">
+            </button>
+            <div class="icons-display-container" id="val-2-firstDeaths"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA JUGADOR 4 (MIANCOR) -->
+      <div class="player-row" data-index="3">
+        <div class="player-name-container">
+          <div class="hud-portrait-card">
+            <img src="char_miancor.png" alt="MIANCOR Character" class="hud-portrait-img">
+          </div>
+          <span class="player-name-static">MIANCOR</span>
+        </div>
+        
+        <div class="player-counters">
+          <!-- Memento Mori -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">MEMENTO MORI</span>
+            <button class="btn-icon-calc" data-player="3" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="mori.png" alt="Mori">
+            </button>
+            <div class="icons-display-container" id="val-3-moris"></div>
+          </div>
+
+          <!-- Killer Ragequit -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">KILLER DC</span>
+            <button class="btn-icon-calc" data-player="3" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="dc.png" alt="DC Killer">
+            </button>
+            <div class="icons-display-container" id="val-3-dcs"></div>
+          </div>
+
+          <!-- Escapes -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">ESCAPE</span>
+            <button class="btn-icon-calc" data-player="3" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="escape.png" alt="Escapó">
+            </button>
+            <div class="icons-display-container" id="val-3-escapes"></div>
+          </div>
+
+          <!-- First Death -->
+          <div class="counter-block">
+            <span class="counter-label-dbd">FIRST DEATH</span>
+            <button class="btn-icon-calc" data-player="3" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="first_death.png" alt="Muerto Primero">
+            </button>
+            <div class="icons-display-container" id="val-3-firstDeaths"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET A LA IZQ, FINAL A LA DER) -->
+    <footer class="calculator-footer">
+      <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all">RESET</button>
+      <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all">FINAL</button>
+    </footer>
+
+  </div>
+
+  <!-- POPUP DE CONFIRMACIÓN DE RESET MODAL -->
+  <div id="reset-confirm-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2 class="modal-title">¿Reiniciar marcadores?</h2>
+      <div class="modal-actions">
+        <button id="btn-modal-cancel" class="btn-modal btn-cancel">NO</button>
+        <button id="btn-modal-confirm" class="btn-modal btn-confirm">SÍ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP DE RECUENTO FINAL GRACIOSO (TAMAÑO GRANDE) -->
+  <div id="final-recap-modal" class="modal-overlay">
+    <div class="modal-card modal-card-large">
+      <h2 class="modal-title-recap">RECUENTO FINAL DE PARTIDA</h2>
+      <div class="recap-list" id="recap-list-container">
+        <!-- Contenido generado dinámicamente en JS -->
+      </div>
+      <div class="modal-actions-recap">
+        <button id="btn-recap-close" class="btn-modal btn-cancel">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP DE CONFIGURACIÓN DE CONEXIÓN (SUPABASE) -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-card modal-card-large settings-modal-card">
+      <h2 class="modal-title-recap">CONEXIÓN SUPABASE</h2>
+      
+      <div class="settings-fields">
+        <div class="input-group">
+          <label class="input-label">SUPABASE URL</label>
+          <input type="text" id="supabase-url-input" placeholder="https://ejemplo.supabase.co">
+        </div>
+        
+        <div class="input-group">
+          <label class="input-label">API ANON KEY</label>
+          <input type="password" id="supabase-key-input" placeholder="Token de acceso público (anon public key)">
+        </div>
+      </div>
+
+      <div class="sql-instructions-box">
+        <span class="sql-box-title">SQL DE INICIALIZACIÓN</span>
+        <p class="sql-box-desc">Ejecuta este SQL en el SQL Editor de tu consola de Supabase para estructurar la tabla y activar tiempo real:</p>
+        <textarea readonly class="sql-textarea" id="sql-code-textarea">CREATE TABLE IF NOT EXISTS public.players (
+  id INT PRIMARY KEY,
+  name TEXT NOT NULL,
+  moris INT DEFAULT 0,
+  dcs INT DEFAULT 0,
+  escapes INT DEFAULT 0,
+  first_deaths INT DEFAULT 0
+);
+ALTER TABLE public.players REPLICA IDENTITY FULL;
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR TABLE public.players;
+COMMIT;
+INSERT INTO public.players (id, name, moris, dcs, escapes, first_deaths)
+VALUES
+  (0, 'VITIGO', 0, 0, 0, 0),
+  (1, 'VINZENT', 0, 0, 0, 0),
+  (2, 'JOSEDVA', 0, 0, 0, 0),
+  (3, 'MIANCOR', 0, 0, 0, 0)
+ON CONFLICT (id) DO NOTHING;</textarea>
+      </div>
+
+      <div class="modal-actions settings-actions">
+        <button id="btn-settings-disconnect" class="btn-modal btn-cancel disconnect-btn">DESCONECTAR</button>
+        <button id="btn-settings-close" class="btn-modal btn-cancel">CERRAR</button>
+        <button id="btn-settings-save" class="btn-modal btn-confirm save-btn">CONECTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIÓN EMERGENTE (TOAST) -->
+  <div class="toast-notification" id="toast-notify">
+    <span id="toast-text">Partida guardada correctamente.</span>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="app.js"></script>
+</body>
+</html>
