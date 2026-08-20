@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dead by Stats | Scoreboard HUD</title>
+  <!-- GLOBAL ERROR CATCHER -->
+  <script>
+    window.addEventListener("error", (e) => {
+      alert("ERROR GLOBAL DETECTADO:\n" + e.message + "\nEn: " + e.filename + ":" + e.lineno);
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      alert("PROMESA RECHAZADA:\n" + e.reason);
+    });
+  </script>
   <!-- SUPABASE JS LIBRARY -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="styles.css">
