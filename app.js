@@ -7,6 +7,10 @@ let playersData = [];
 let supabaseClient = null;
 let realtimeChannel = null;
 
+// --- CREDENCIALES POR DEFECTO (HARDCODED) ---
+const DEFAULT_SUPABASE_URL = "https://tonbittltrpzgncogcke.supabase.co";
+const DEFAULT_SUPABASE_KEY = "sb_publishable_klpZVv35Pz2juNv9awXMzA_Lt37I9BF";
+
 // --- INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", () => {
   loadData();
@@ -16,8 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- INICIAR CLIENTE SUPABASE ---
 function initSupabase() {
-  const url = localStorage.getItem("dbd_supabase_url");
-  const key = localStorage.getItem("dbd_supabase_key");
+  // Si el usuario desconectó explícitamente la base de datos, ir a modo local offline
+  if (localStorage.getItem("dbd_supabase_disabled") === "true") {
+    supabaseClient = null;
+    return false;
+  }
+
+  // Intentar obtener valores personalizados de LocalStorage, si no usar los valores por defecto
+  const url = localStorage.getItem("dbd_supabase_url") || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem("dbd_supabase_key") || DEFAULT_SUPABASE_KEY;
+
   if (url && key) {
     try {
       // Instanciar cliente desde la librería cargada por CDN (global 'supabase')
@@ -403,9 +415,9 @@ function initCalculator() {
 
   if (btnSettingsTrigger && modalSettings) {
     btnSettingsTrigger.addEventListener("click", () => {
-      // Cargar valores actuales en los inputs
-      urlInput.value = localStorage.getItem("dbd_supabase_url") || "";
-      keyInput.value = localStorage.getItem("dbd_supabase_key") || "";
+      // Cargar valores actuales de LocalStorage o los valores por defecto
+      urlInput.value = localStorage.getItem("dbd_supabase_url") || DEFAULT_SUPABASE_URL;
+      keyInput.value = localStorage.getItem("dbd_supabase_key") || DEFAULT_SUPABASE_KEY;
       modalSettings.classList.add("show");
     });
   }
@@ -426,6 +438,7 @@ function initCalculator() {
         return;
       }
 
+      localStorage.removeItem("dbd_supabase_disabled");
       localStorage.setItem("dbd_supabase_url", url);
       localStorage.setItem("dbd_supabase_key", key);
       
@@ -436,6 +449,7 @@ function initCalculator() {
 
   if (btnDisconnectSettings) {
     btnDisconnectSettings.addEventListener("click", () => {
+      localStorage.setItem("dbd_supabase_disabled", "true");
       localStorage.removeItem("dbd_supabase_url");
       localStorage.removeItem("dbd_supabase_key");
       
