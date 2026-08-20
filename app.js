@@ -59,20 +59,20 @@ async function loadData() {
         renderCounters();
         subscribeRealtime();
         showToast("Conectado a Supabase en tiempo real.", "success");
-        return;
+        return; // Carga exitosa desde Supabase
       } else {
-        // Inicializar tabla vacía en Supabase si está en blanco
+        console.warn("Supabase no contiene exactamente 4 jugadores. Intentando inicializar tabla...");
+        // Intentar inicializar tabla vacía
         await pushAllDataToSupabase();
-        subscribeRealtime();
-        return;
+        // Si no hay datos, continuamos para cargar local como fallback
       }
     } catch (err) {
       console.error("Error al conectar con Supabase. Usando LocalStorage offline.", err);
-      showToast("Supabase sin inicializar o error de conexión. Usando LocalStorage offline.", "info");
+      showToast("Error de conexión con Supabase. Usando LocalStorage offline.", "info");
     }
   }
 
-  // Fallback a LocalStorage normal
+  // Fallback a LocalStorage si Supabase falla o no está configurado
   loadFromLocalStorage();
 }
 
