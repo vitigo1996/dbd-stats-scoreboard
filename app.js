@@ -209,6 +209,11 @@ async function updatePlayerStat(playerIdx, statName, value) {
 
 // --- AMBIENTE DE LA HOGUERA (BRASAS FLOTANTES) ---
 function initAtmosphere() {
+  // Desactivar animaciones de partículas pesadas en móviles para optimizar rendimiento
+  if (window.innerWidth < 820) {
+    console.log("Rendimiento: Atmósfera desactivada en móviles.");
+    return;
+  }
   const container = document.getElementById("embers-container");
   if (!container) return;
 
