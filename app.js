@@ -65,7 +65,8 @@ async function loadData() {
             moris: row.moris || 0,
             dcs: row.dcs || 0,
             escapes: row.escapes || 0,
-            firstDeaths: row.first_deaths || 0
+            firstDeaths: row.first_deaths || 0,
+            bloodpoints: row.bloodpoints || 0
           }
         }));
         renderCounters();
@@ -100,13 +101,14 @@ function loadFromLocalStorage() {
         player.name = defaultNames[idx]; // Forzar nombres estáticos
 
         if (!player.stats) {
-          player.stats = { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 };
+          player.stats = { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 };
         } else {
           delete player.stats.matches;
           if (player.stats.moris === undefined) player.stats.moris = 0;
           if (player.stats.dcs === undefined) player.stats.dcs = 0;
           if (player.stats.escapes === undefined) player.stats.escapes = 0;
           if (player.stats.firstDeaths === undefined) player.stats.firstDeaths = 0;
+          if (player.stats.bloodpoints === undefined) player.stats.bloodpoints = 0;
         }
       });
       saveData();
@@ -121,10 +123,10 @@ function loadFromLocalStorage() {
 
 function initializeDefaultData() {
   playersData = [
-    { name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } },
-    { name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } },
-    { name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } },
-    { name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } }
+    { name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 } },
+    { name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 } },
+    { name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 } },
+    { name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 } }
   ];
   saveData();
 }
@@ -138,14 +140,15 @@ async function pushAllDataToSupabase() {
   if (!supabaseClient) return;
   try {
     for (let i = 0; i < 4; i++) {
-      const p = playersData[i] || { name: "", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0 } };
+      const p = playersData[i] || { name: "", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0 } };
       await supabaseClient.from("players").upsert({
         id: i,
         name: p.name,
         moris: p.stats.moris,
         dcs: p.stats.dcs,
         escapes: p.stats.escapes,
-        first_deaths: p.stats.firstDeaths
+        first_deaths: p.stats.firstDeaths,
+        bloodpoints: p.stats.bloodpoints
       });
     }
   } catch (err) {
@@ -174,7 +177,8 @@ function subscribeRealtime() {
             moris: updatedRow.moris || 0,
             dcs: updatedRow.dcs || 0,
             escapes: updatedRow.escapes || 0,
-            firstDeaths: updatedRow.first_deaths || 0
+            firstDeaths: updatedRow.first_deaths || 0,
+            bloodpoints: updatedRow.bloodpoints || 0
           };
           renderCounters();
         }
@@ -296,6 +300,9 @@ function initCalculator() {
   // 1. Click sobre el icono de referencia para Sumar (Clic Izquierdo) o Restar (Clic Derecho)
   const iconButtons = document.querySelectorAll(".btn-icon-calc");
   iconButtons.forEach(btn => {
+    // El botón estático de BP no debe tener escuchadores de sumador de clic tradicionales
+    if (btn.classList.contains("bp-btn-static")) return;
+
     // Clic Izquierdo -> Sumar 1 (con animación de vuelo)
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -373,7 +380,7 @@ function initCalculator() {
           // Actualización de múltiples filas en Supabase
           const { error } = await supabaseClient
             .from("players")
-            .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0 })
+            .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0 })
             .in("id", [0, 1, 2, 3]);
           if (error) throw error;
         } catch (err) {
@@ -466,6 +473,59 @@ function initCalculator() {
       loadFromLocalStorage(); // Volver al LocalStorage local
     });
   }
+
+  // 5. Entradas numéricas de Bloodpoints y botón "+"
+  const bpInputs = document.querySelectorAll(".bp-match-input");
+  bpInputs.forEach(input => {
+    const playerIdx = parseInt(input.getAttribute("data-player"));
+    
+    const commitBP = () => {
+      const val = parseInt(input.value);
+      if (!isNaN(val)) {
+        playersData[playerIdx].stats.bloodpoints += val;
+        renderCounters();
+        input.value = ""; // Limpiar el input
+        
+        // Sincronizar
+        updatePlayerStat(playerIdx, "bloodpoints", playersData[playerIdx].stats.bloodpoints);
+        showToast(`Sumados ${val.toLocaleString()} BP a ${playersData[playerIdx].name}.`, "success");
+      }
+    };
+
+    // Escuchar Enter en la caja de texto
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitBP();
+      }
+    });
+
+    // Escuchar clic en el botón "+"
+    const addBtn = document.querySelector(`.btn-bp-add[data-player="${playerIdx}"]`);
+    if (addBtn) {
+      addBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        commitBP();
+      });
+    }
+  });
+
+  // Clic derecho en el visualizador total de Bloodpoints para resetearlo a 0
+  const bpDisplays = document.querySelectorAll(".bp-total-display");
+  bpDisplays.forEach(display => {
+    display.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      const playerIdx = parseInt(display.id.split("-")[2]); // val-idx-bloodpoints -> idx está en posición 1
+      const realPlayerIdx = isNaN(playerIdx) ? parseInt(display.id.split("-")[1]) : playerIdx;
+      
+      if (confirm(`¿Reiniciar puntos de sangre de ${playersData[realPlayerIdx].name} a 0?`)) {
+        playersData[realPlayerIdx].stats.bloodpoints = 0;
+        renderCounters();
+        updatePlayerStat(realPlayerIdx, "bloodpoints", 0);
+        showToast(`Puntos de sangre de ${playersData[realPlayerIdx].name} reiniciados.`, "info");
+      }
+    });
+  });
 }
 
 // --- CÁLCULO DINÁMICO DE GANADORES Y TÍTULOS GRACIOSOS ---
@@ -499,6 +559,12 @@ function calculateFinalRecap() {
       title: "📦 EL BULTO",
       desc: "El saco de boxeo oficial. Corre a los brazos del killer a la primera.",
       suffix: "FIRST DEATH"
+    },
+    {
+      key: "bloodpoints",
+      title: "💰 EL BANQUERO DE LA ENTIDAD",
+      desc: "El que se fue con los bolsillos llenos de puntos de sangre. Aportando al máximo.",
+      suffix: "BLOODPOINTS"
     }
   ];
 
@@ -539,7 +605,7 @@ function calculateFinalRecap() {
     // Si el valor máximo es mayor a cero, renderizar ganadores (con soporte de empates)
     if (result.maxVal > 0) {
       winnerName = result.leaders.map(l => l.name).join(" & ");
-      scoreText = result.maxVal;
+      scoreText = cat.key === "bloodpoints" ? result.maxVal.toLocaleString() : result.maxVal;
 
       result.leaders.forEach(leader => {
         const avatarSrc = getAvatarFor(leader.name);
@@ -584,7 +650,7 @@ function calculateFinalRecap() {
 
 // --- RENDERIZAR VALORES DE CONTADORES CON ICONOS REPETIDOS ---
 function renderCounters() {
-  const statsList = ["moris", "dcs", "escapes", "firstDeaths"];
+  const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
 
   for (let i = 0; i < 4; i++) {
     if (playersData[i] && playersData[i].stats) {
@@ -593,6 +659,12 @@ function renderCounters() {
       statsList.forEach(stat => {
         const container = document.getElementById(`val-${i}-${stat}`);
         if (!container) return;
+
+        // Renderizado especial para Bloodpoints (formato número)
+        if (stat === "bloodpoints") {
+          container.textContent = (stats[stat] || 0).toLocaleString() + " BP";
+          return;
+        }
 
         container.innerHTML = "";
 

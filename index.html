@@ -75,6 +75,19 @@
             </button>
             <div class="icons-display-container" id="val-0-firstDeaths"></div>
           </div>
+
+          <!-- Bloodpoints -->
+          <div class="counter-block bp-block">
+            <span class="counter-label-dbd">BLOODPOINTS</span>
+            <div class="bp-icon-input-row">
+              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
+                <img src="bloodpoints.png" alt="BP">
+              </div>
+              <input type="number" class="bp-match-input" data-player="0" placeholder="+BP" min="-1000000" max="1000000">
+              <button class="btn-bp-add" data-player="0" title="Sumar puntos de partida">+</button>
+            </div>
+            <div class="bp-total-display" id="val-0-bloodpoints">0 BP</div>
+          </div>
         </div>
       </div>
 
@@ -122,6 +135,19 @@
               <img src="first_death.png" alt="Muerto Primero">
             </button>
             <div class="icons-display-container" id="val-1-firstDeaths"></div>
+          </div>
+
+          <!-- Bloodpoints -->
+          <div class="counter-block bp-block">
+            <span class="counter-label-dbd">BLOODPOINTS</span>
+            <div class="bp-icon-input-row">
+              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
+                <img src="bloodpoints.png" alt="BP">
+              </div>
+              <input type="number" class="bp-match-input" data-player="1" placeholder="+BP" min="-1000000" max="1000000">
+              <button class="btn-bp-add" data-player="1" title="Sumar puntos de partida">+</button>
+            </div>
+            <div class="bp-total-display" id="val-1-bloodpoints">0 BP</div>
           </div>
         </div>
       </div>
@@ -171,6 +197,19 @@
             </button>
             <div class="icons-display-container" id="val-2-firstDeaths"></div>
           </div>
+
+          <!-- Bloodpoints -->
+          <div class="counter-block bp-block">
+            <span class="counter-label-dbd">BLOODPOINTS</span>
+            <div class="bp-icon-input-row">
+              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
+                <img src="bloodpoints.png" alt="BP">
+              </div>
+              <input type="number" class="bp-match-input" data-player="2" placeholder="+BP" min="-1000000" max="1000000">
+              <button class="btn-bp-add" data-player="2" title="Sumar puntos de partida">+</button>
+            </div>
+            <div class="bp-total-display" id="val-2-bloodpoints">0 BP</div>
+          </div>
         </div>
       </div>
 
@@ -218,6 +257,19 @@
               <img src="first_death.png" alt="Muerto Primero">
             </button>
             <div class="icons-display-container" id="val-3-firstDeaths"></div>
+          </div>
+
+          <!-- Bloodpoints -->
+          <div class="counter-block bp-block">
+            <span class="counter-label-dbd">BLOODPOINTS</span>
+            <div class="bp-icon-input-row">
+              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
+                <img src="bloodpoints.png" alt="BP">
+              </div>
+              <input type="number" class="bp-match-input" data-player="3" placeholder="+BP" min="-1000000" max="1000000">
+              <button class="btn-bp-add" data-player="3" title="Sumar puntos de partida">+</button>
+            </div>
+            <div class="bp-total-display" id="val-3-bloodpoints">0 BP</div>
           </div>
         </div>
       </div>
@@ -282,19 +334,20 @@
   moris INT DEFAULT 0,
   dcs INT DEFAULT 0,
   escapes INT DEFAULT 0,
-  first_deaths INT DEFAULT 0
+  first_deaths INT DEFAULT 0,
+  bloodpoints INT DEFAULT 0
 );
 ALTER TABLE public.players REPLICA IDENTITY FULL;
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
   CREATE PUBLICATION supabase_realtime FOR TABLE public.players;
 COMMIT;
-INSERT INTO public.players (id, name, moris, dcs, escapes, first_deaths)
+INSERT INTO public.players (id, name, moris, dcs, escapes, first_deaths, bloodpoints)
 VALUES
-  (0, 'VITIGO', 0, 0, 0, 0),
-  (1, 'VINZENT', 0, 0, 0, 0),
-  (2, 'JOSEDVA', 0, 0, 0, 0),
-  (3, 'MIANCOR', 0, 0, 0, 0)
+  (0, 'VITIGO', 0, 0, 0, 0, 0),
+  (1, 'VINZENT', 0, 0, 0, 0, 0),
+  (2, 'JOSEDVA', 0, 0, 0, 0, 0),
+  (3, 'MIANCOR', 0, 0, 0, 0, 0)
 ON CONFLICT (id) DO NOTHING;</textarea>
       </div>
 
@@ -312,6 +365,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
