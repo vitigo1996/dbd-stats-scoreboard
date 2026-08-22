@@ -77,16 +77,12 @@
           </div>
 
           <!-- Bloodpoints -->
-          <div class="counter-block bp-block">
+          <div class="counter-block">
             <span class="counter-label-dbd">BLOODPOINTS</span>
-            <div class="bp-icon-input-row">
-              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
-                <img src="bloodpoints.png" alt="BP">
-              </div>
-              <input type="number" class="bp-match-input" data-player="0" placeholder="+BP" min="-1000000" max="1000000">
-              <button class="btn-bp-add" data-player="0" title="Sumar puntos de partida">+</button>
-            </div>
-            <div class="bp-total-display" id="val-0-bloodpoints">0 BP</div>
+            <button class="btn-icon-calc" data-player="0" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="bloodpoints.png" alt="BP">
+            </button>
+            <div class="icons-display-container" id="val-0-bloodpoints"></div>
           </div>
         </div>
       </div>
@@ -138,16 +134,12 @@
           </div>
 
           <!-- Bloodpoints -->
-          <div class="counter-block bp-block">
+          <div class="counter-block">
             <span class="counter-label-dbd">BLOODPOINTS</span>
-            <div class="bp-icon-input-row">
-              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
-                <img src="bloodpoints.png" alt="BP">
-              </div>
-              <input type="number" class="bp-match-input" data-player="1" placeholder="+BP" min="-1000000" max="1000000">
-              <button class="btn-bp-add" data-player="1" title="Sumar puntos de partida">+</button>
-            </div>
-            <div class="bp-total-display" id="val-1-bloodpoints">0 BP</div>
+            <button class="btn-icon-calc" data-player="1" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="bloodpoints.png" alt="BP">
+            </button>
+            <div class="icons-display-container" id="val-1-bloodpoints"></div>
           </div>
         </div>
       </div>
@@ -199,16 +191,12 @@
           </div>
 
           <!-- Bloodpoints -->
-          <div class="counter-block bp-block">
+          <div class="counter-block">
             <span class="counter-label-dbd">BLOODPOINTS</span>
-            <div class="bp-icon-input-row">
-              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
-                <img src="bloodpoints.png" alt="BP">
-              </div>
-              <input type="number" class="bp-match-input" data-player="2" placeholder="+BP" min="-1000000" max="1000000">
-              <button class="btn-bp-add" data-player="2" title="Sumar puntos de partida">+</button>
-            </div>
-            <div class="bp-total-display" id="val-2-bloodpoints">0 BP</div>
+            <button class="btn-icon-calc" data-player="2" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="bloodpoints.png" alt="BP">
+            </button>
+            <div class="icons-display-container" id="val-2-bloodpoints"></div>
           </div>
         </div>
       </div>
@@ -260,16 +248,12 @@
           </div>
 
           <!-- Bloodpoints -->
-          <div class="counter-block bp-block">
+          <div class="counter-block">
             <span class="counter-label-dbd">BLOODPOINTS</span>
-            <div class="bp-icon-input-row">
-              <div class="btn-icon-calc bp-btn-static" title="Puntos de sangre">
-                <img src="bloodpoints.png" alt="BP">
-              </div>
-              <input type="number" class="bp-match-input" data-player="3" placeholder="+BP" min="-1000000" max="1000000">
-              <button class="btn-bp-add" data-player="3" title="Sumar puntos de partida">+</button>
-            </div>
-            <div class="bp-total-display" id="val-3-bloodpoints">0 BP</div>
+            <button class="btn-icon-calc" data-player="3" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+              <img src="bloodpoints.png" alt="BP">
+            </button>
+            <div class="icons-display-container" id="val-3-bloodpoints"></div>
           </div>
         </div>
       </div>
@@ -365,6 +349,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

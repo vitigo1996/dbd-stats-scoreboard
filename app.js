@@ -300,9 +300,6 @@ function initCalculator() {
   // 1. Click sobre el icono de referencia para Sumar (Clic Izquierdo) o Restar (Clic Derecho)
   const iconButtons = document.querySelectorAll(".btn-icon-calc");
   iconButtons.forEach(btn => {
-    // El botón estático de BP no debe tener escuchadores de sumador de clic tradicionales
-    if (btn.classList.contains("bp-btn-static")) return;
-
     // Clic Izquierdo -> Sumar 1 (con animación de vuelo)
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -473,59 +470,6 @@ function initCalculator() {
       loadFromLocalStorage(); // Volver al LocalStorage local
     });
   }
-
-  // 5. Entradas numéricas de Bloodpoints y botón "+"
-  const bpInputs = document.querySelectorAll(".bp-match-input");
-  bpInputs.forEach(input => {
-    const playerIdx = parseInt(input.getAttribute("data-player"));
-    
-    const commitBP = () => {
-      const val = parseInt(input.value);
-      if (!isNaN(val)) {
-        playersData[playerIdx].stats.bloodpoints += val;
-        renderCounters();
-        input.value = ""; // Limpiar el input
-        
-        // Sincronizar
-        updatePlayerStat(playerIdx, "bloodpoints", playersData[playerIdx].stats.bloodpoints);
-        showToast(`Sumados ${val.toLocaleString()} BP a ${playersData[playerIdx].name}.`, "success");
-      }
-    };
-
-    // Escuchar Enter en la caja de texto
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        commitBP();
-      }
-    });
-
-    // Escuchar clic en el botón "+"
-    const addBtn = document.querySelector(`.btn-bp-add[data-player="${playerIdx}"]`);
-    if (addBtn) {
-      addBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        commitBP();
-      });
-    }
-  });
-
-  // Clic derecho en el visualizador total de Bloodpoints para resetearlo a 0
-  const bpDisplays = document.querySelectorAll(".bp-total-display");
-  bpDisplays.forEach(display => {
-    display.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      const playerIdx = parseInt(display.id.split("-")[2]); // val-idx-bloodpoints -> idx está en posición 1
-      const realPlayerIdx = isNaN(playerIdx) ? parseInt(display.id.split("-")[1]) : playerIdx;
-      
-      if (confirm(`¿Reiniciar puntos de sangre de ${playersData[realPlayerIdx].name} a 0?`)) {
-        playersData[realPlayerIdx].stats.bloodpoints = 0;
-        renderCounters();
-        updatePlayerStat(realPlayerIdx, "bloodpoints", 0);
-        showToast(`Puntos de sangre de ${playersData[realPlayerIdx].name} reiniciados.`, "info");
-      }
-    });
-  });
 }
 
 // --- CÁLCULO DINÁMICO DE GANADORES Y TÍTULOS GRACIOSOS ---
@@ -605,7 +549,7 @@ function calculateFinalRecap() {
     // Si el valor máximo es mayor a cero, renderizar ganadores (con soporte de empates)
     if (result.maxVal > 0) {
       winnerName = result.leaders.map(l => l.name).join(" & ");
-      scoreText = cat.key === "bloodpoints" ? result.maxVal.toLocaleString() : result.maxVal;
+      scoreText = result.maxVal;
 
       result.leaders.forEach(leader => {
         const avatarSrc = getAvatarFor(leader.name);
@@ -660,12 +604,6 @@ function renderCounters() {
         const container = document.getElementById(`val-${i}-${stat}`);
         if (!container) return;
 
-        // Renderizado especial para Bloodpoints (formato número)
-        if (stat === "bloodpoints") {
-          container.textContent = (stats[stat] || 0).toLocaleString() + " BP";
-          return;
-        }
-
         container.innerHTML = "";
 
         const count = stats[stat] || 0;
@@ -678,6 +616,7 @@ function renderCounters() {
           else if (stat === "dcs") img.src = "dc.png";
           else if (stat === "escapes") img.src = "escape.png";
           else if (stat === "firstDeaths") img.src = "first_death.png";
+          else if (stat === "bloodpoints") img.src = "bloodpoints.png";
           
           img.alt = stat;
           img.className = "mini-icon-img";
