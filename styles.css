@@ -936,7 +936,7 @@ body {
 
 #line-chart-container {
   width: 100%;
-  min-height: 260px;
+  height: 380px;
 }
 
 /* Clases del SVG de la Gráfica */
@@ -1155,6 +1155,6 @@ body {
     margin-bottom: 0.6rem;
   }
   #line-chart-container {
-    min-height: 220px;
+    height: 240px;
   }
 }

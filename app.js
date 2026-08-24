@@ -90,24 +90,19 @@ function loadFromLocalStorage() {
     try {
       playersData = JSON.parse(savedData);
       
+      if (!Array.isArray(playersData) || playersData.length !== 4) {
+        throw new Error("Invalid structure");
+      }
+
+      const isValid = playersData.every(p => p && p.stats && p.stats.history && Array.isArray(p.stats.history) && p.stats.moris !== undefined);
+      if (!isValid) {
+        throw new Error("Corrupted local structure");
+      }
+
       playersData.forEach((player, idx) => {
         const defaultNames = ["VITIGO", "VINZENT", "JOSEDVA", "MIANCOR"];
         player.name = defaultNames[idx];
         player.id = player.id !== undefined ? player.id : idx;
-
-        if (!player.stats) {
-          player.stats = { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] };
-        } else {
-          delete player.stats.matches;
-          if (player.stats.moris === undefined) player.stats.moris = 0;
-          if (player.stats.dcs === undefined) player.stats.dcs = 0;
-          if (player.stats.escapes === undefined) player.stats.escapes = 0;
-          if (player.stats.firstDeaths === undefined) player.stats.firstDeaths = 0;
-          if (player.stats.bloodpoints === undefined) player.stats.bloodpoints = 0;
-          if (!player.stats.history || !Array.isArray(player.stats.history)) {
-            player.stats.history = [0];
-          }
-        }
       });
       saveData();
     } catch (e) {
@@ -124,10 +119,8 @@ function initializeDefaultData() {
     { id: 0, name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
     { id: 1, name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
     { id: 2, name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
-    { id: 3, name: "MIANCOR", stats: { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } } }
+    { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } }
   ];
-  // Corregir redundancia del último jugador
-  playersData[3] = { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } };
   saveData();
 }
 
@@ -748,8 +741,8 @@ function drawLineChart() {
   const yMinLimit = minY - yPadding;
   const yMaxLimit = maxY + yPadding;
 
-  const svgWidth = container.clientWidth || 400;
-  const svgHeight = container.clientHeight || 380;
+  const svgWidth = container.clientWidth && container.clientWidth > 0 ? container.clientWidth : 400;
+  const svgHeight = container.clientHeight && container.clientHeight > 0 ? container.clientHeight : 380;
 
   const paddingLeft = 32;
   const paddingRight = 45; 
@@ -763,12 +756,14 @@ function drawLineChart() {
   let svg = container.querySelector("svg");
   if (!svg) {
     svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", "100%");
+    svg.setAttribute("width", svgWidth);
+    svg.setAttribute("height", svgHeight);
     svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
     svg.setAttribute("style", "overflow: visible;");
     container.appendChild(svg);
   } else {
+    svg.setAttribute("width", svgWidth);
+    svg.setAttribute("height", svgHeight);
     svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
   }
 
