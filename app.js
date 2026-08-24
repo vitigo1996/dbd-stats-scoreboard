@@ -562,20 +562,20 @@ function calculateFinalRecap() {
   const categories = [
     {
       key: "totalScore",
-      title: "👑 EL CAMPEÓN DE LA SESIÓN",
-      desc: "El sobreviviente definitivo. Dominó la tabla con el mayor puntaje de rango total.",
+      title: "👑 MVP",
+      desc: "El superviviente definitivo.",
       suffix: "PTS RANGO"
     },
     {
       key: "escapes",
-      title: "🏆 EL MVP",
-      desc: "El que sabe para que sirven las puertas de salida, sacando la cara por el equipo.",
+      title: "🏆 ESCAPISTA",
+      desc: "Se escapa a toda costa.",
       suffix: "ESCAPE"
     },
     {
       key: "bloodpoints",
-      title: "💰 EL BANQUERO DE LA ENTIDAD",
-      desc: "El que se fue con los bolsillos llenos de puntos de sangre. Aportando al máximo.",
+      title: "💰 MAS APORTE DURANTE LA PARTIDA",
+      desc: "Se la juega por el equipo.",
       suffix: "BLOODPOINTS"
     },
     {
@@ -587,13 +587,13 @@ function calculateFinalRecap() {
     {
       key: "moris",
       title: "💀 EL CATADOR DE MORIS",
-      desc: "El cliente premium de los asesinatos personalizados. Siempre listo para salir en su foto de recuerdo.",
+      desc: "El cliente premium de los asesinatos en primera persona.",
       suffix: "MEMENTO MORI"
     },
     {
       key: "firstDeaths",
       title: "📦 EL BULTO",
-      desc: "El saco de boxeo oficial. Corre a los brazos del killer a la primera.",
+      desc: "El mejor amigo del killer.",
       suffix: "FIRST DEATH"
     }
   ];
