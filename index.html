@@ -30,250 +30,265 @@
 
   <!-- CONTENEDOR PRINCIPAL DE LA CALCULADORA -->
   <div class="main-content-container">
-    <div class="calculator-wrapper">
+    
+    <!-- CONTENEDORES SUPERIORES PARALELOS -->
+    <div class="top-panels-layout">
       
-      <!-- TÍTULO PRINCIPAL (LOGO DBD) -->
-      <header class="calculator-header">
-        <img src="logo.png" alt="DbD Logo" class="header-logo">
-        <h1 class="header-title">DEAD BY <span>STATS</span></h1>
-      </header>
-
-      <!-- TABLERO DE JUGADORES Y RECUENTO LATERAL -->
-      <div class="hud-main-layout">
-        <main class="scoreboard-container">
+      <!-- CARD DEL SCOREBOARD (MARCADORES) -->
+      <div class="calculator-wrapper">
         
-        <!-- FILA JUGADOR 1 (VITIGO) -->
-        <div class="player-row" data-index="0">
-          <div class="player-name-container">
-            <div class="hud-portrait-card">
-              <img src="char_vitigo.png" alt="VITIGO Character" class="hud-portrait-img">
-            </div>
-            <span class="player-name-static">VITIGO</span>
-          </div>
+        <!-- TÍTULO PRINCIPAL (LOGO DBD) -->
+        <header class="calculator-header">
+          <img src="logo.png" alt="DbD Logo" class="header-logo">
+          <h1 class="header-title">DEAD BY <span>STATS</span></h1>
+        </header>
+
+        <!-- TABLERO DE JUGADORES -->
+        <div class="hud-main-layout">
+          <main class="scoreboard-container">
           
-          <div class="player-counters">
-            <!-- Memento Mori -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">MEMENTO MORI</span>
-              <button class="btn-icon-calc" data-player="0" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="mori.png" alt="Mori">
-              </button>
-              <div class="icons-display-container" id="val-0-moris"></div>
+            <!-- FILA JUGADOR 1 (VITIGO) -->
+            <div class="player-row" data-index="0">
+              <div class="player-name-container">
+                <div class="hud-portrait-card">
+                  <img src="char_vitigo.png" alt="VITIGO Character" class="hud-portrait-img">
+                </div>
+                <span class="player-name-static">VITIGO</span>
+              </div>
+              
+              <div class="player-counters">
+                <!-- Memento Mori -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">MEMENTO MORI</span>
+                  <button class="btn-icon-calc" data-player="0" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="mori.png" alt="Mori">
+                  </button>
+                  <div class="icons-display-container" id="val-0-moris"></div>
+                </div>
+
+                <!-- DC -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">DESCONEXIÓN</span>
+                  <button class="btn-icon-calc" data-player="0" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="dc.png" alt="DC">
+                  </button>
+                  <div class="icons-display-container" id="val-0-dcs"></div>
+                </div>
+
+                <!-- Escape -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">ESCAPE</span>
+                  <button class="btn-icon-calc" data-player="0" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="escape.png" alt="Escape">
+                  </button>
+                  <div class="icons-display-container" id="val-0-escapes"></div>
+                </div>
+
+                <!-- First Death -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">PRIMERA MUERTE</span>
+                  <button class="btn-icon-calc" data-player="0" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="first_death.png" alt="First Death">
+                  </button>
+                  <div class="icons-display-container" id="val-0-firstDeaths"></div>
+                </div>
+
+                <!-- Bloodpoints -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">BLOODPOINTS</span>
+                  <button class="btn-icon-calc" data-player="0" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="bloodpoints.png" alt="BP">
+                  </button>
+                  <div class="icons-display-container" id="val-0-bloodpoints"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- DC -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">DESCONEXIÓN</span>
-              <button class="btn-icon-calc" data-player="0" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="dc.png" alt="DC">
-              </button>
-              <div class="icons-display-container" id="val-0-dcs"></div>
+            <!-- FILA JUGADOR 2 (VINZENT) -->
+            <div class="player-row" data-index="1">
+              <div class="player-name-container">
+                <div class="hud-portrait-card">
+                  <img src="char_vinzent.png" alt="VINZENT Character" class="hud-portrait-img">
+                </div>
+                <span class="player-name-static">VINZENT</span>
+              </div>
+              
+              <div class="player-counters">
+                <!-- Memento Mori -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">MEMENTO MORI</span>
+                  <button class="btn-icon-calc" data-player="1" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="mori.png" alt="Mori">
+                  </button>
+                  <div class="icons-display-container" id="val-1-moris"></div>
+                </div>
+
+                <!-- DC -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">DESCONEXIÓN</span>
+                  <button class="btn-icon-calc" data-player="1" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="dc.png" alt="DC">
+                  </button>
+                  <div class="icons-display-container" id="val-1-dcs"></div>
+                </div>
+
+                <!-- Escape -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">ESCAPE</span>
+                  <button class="btn-icon-calc" data-player="1" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="escape.png" alt="Escape">
+                  </button>
+                  <div class="icons-display-container" id="val-1-escapes"></div>
+                </div>
+
+                <!-- First Death -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">PRIMERA MUERTE</span>
+                  <button class="btn-icon-calc" data-player="1" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="first_death.png" alt="First Death">
+                  </button>
+                  <div class="icons-display-container" id="val-1-firstDeaths"></div>
+                </div>
+
+                <!-- Bloodpoints -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">BLOODPOINTS</span>
+                  <button class="btn-icon-calc" data-player="1" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="bloodpoints.png" alt="BP">
+                  </button>
+                  <div class="icons-display-container" id="val-1-bloodpoints"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- Escape -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">ESCAPE</span>
-              <button class="btn-icon-calc" data-player="0" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="escape.png" alt="Escape">
-              </button>
-              <div class="icons-display-container" id="val-0-escapes"></div>
+            <!-- FILA JUGADOR 3 (JOSEDVA) -->
+            <div class="player-row" data-index="2">
+              <div class="player-name-container">
+                <div class="hud-portrait-card">
+                  <img src="char_jose.png" alt="JOSEDVA Character" class="hud-portrait-img">
+                </div>
+                <span class="player-name-static">JOSEDVA</span>
+              </div>
+              
+              <div class="player-counters">
+                <!-- Memento Mori -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">MEMENTO MORI</span>
+                  <button class="btn-icon-calc" data-player="2" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="mori.png" alt="Mori">
+                  </button>
+                  <div class="icons-display-container" id="val-2-moris"></div>
+                </div>
+
+                <!-- DC -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">DESCONEXIÓN</span>
+                  <button class="btn-icon-calc" data-player="2" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="dc.png" alt="DC">
+                  </button>
+                  <div class="icons-display-container" id="val-2-dcs"></div>
+                </div>
+
+                <!-- Escape -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">ESCAPE</span>
+                  <button class="btn-icon-calc" data-player="2" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="escape.png" alt="Escape">
+                  </button>
+                  <div class="icons-display-container" id="val-2-escapes"></div>
+                </div>
+
+                <!-- First Death -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">PRIMERA MUERTE</span>
+                  <button class="btn-icon-calc" data-player="2" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="first_death.png" alt="First Death">
+                  </button>
+                  <div class="icons-display-container" id="val-2-firstDeaths"></div>
+                </div>
+
+                <!-- Bloodpoints -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">BLOODPOINTS</span>
+                  <button class="btn-icon-calc" data-player="2" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="bloodpoints.png" alt="BP">
+                  </button>
+                  <div class="icons-display-container" id="val-2-bloodpoints"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- First Death -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">PRIMERA MUERTE</span>
-              <button class="btn-icon-calc" data-player="0" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="first_death.png" alt="First Death">
-              </button>
-              <div class="icons-display-container" id="val-0-firstDeaths"></div>
+            <!-- FILA JUGADOR 4 (MIANCOR) -->
+            <div class="player-row" data-index="3">
+              <div class="player-name-container">
+                <div class="hud-portrait-card">
+                  <img src="char_miancor.png" alt="MIANCOR Character" class="hud-portrait-img">
+                </div>
+                <span class="player-name-static">MIANCOR</span>
+              </div>
+              
+              <div class="player-counters">
+                <!-- Memento Mori -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">MEMENTO MORI</span>
+                  <button class="btn-icon-calc" data-player="3" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="mori.png" alt="Mori">
+                  </button>
+                  <div class="icons-display-container" id="val-3-moris"></div>
+                </div>
+
+                <!-- DC -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">DESCONEXIÓN</span>
+                  <button class="btn-icon-calc" data-player="3" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="dc.png" alt="DC">
+                  </button>
+                  <div class="icons-display-container" id="val-3-dcs"></div>
+                </div>
+
+                <!-- Escape -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">ESCAPE</span>
+                  <button class="btn-icon-calc" data-player="3" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="escape.png" alt="Escape">
+                  </button>
+                  <div class="icons-display-container" id="val-3-escapes"></div>
+                </div>
+
+                <!-- First Death -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">PRIMERA MUERTE</span>
+                  <button class="btn-icon-calc" data-player="3" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="first_death.png" alt="First Death">
+                  </button>
+                  <div class="icons-display-container" id="val-3-firstDeaths"></div>
+                </div>
+
+                <!-- Bloodpoints -->
+                <div class="counter-block">
+                  <span class="counter-label-dbd">BLOODPOINTS</span>
+                  <button class="btn-icon-calc" data-player="3" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
+                    <img src="bloodpoints.png" alt="BP">
+                  </button>
+                  <div class="icons-display-container" id="val-3-bloodpoints"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- Bloodpoints -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">BLOODPOINTS</span>
-              <button class="btn-icon-calc" data-player="0" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="bloodpoints.png" alt="BP">
-              </button>
-              <div class="icons-display-container" id="val-0-bloodpoints"></div>
-            </div>
-          </div>
+          </main>
         </div>
 
-        <!-- FILA JUGADOR 2 (VINZENT) -->
-        <div class="player-row" data-index="1">
-          <div class="player-name-container">
-            <div class="hud-portrait-card">
-              <img src="char_vinzent.png" alt="VINZENT Character" class="hud-portrait-img">
-            </div>
-            <span class="player-name-static">VINZENT</span>
-          </div>
-          
-          <div class="player-counters">
-            <!-- Memento Mori -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">MEMENTO MORI</span>
-              <button class="btn-icon-calc" data-player="1" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="mori.png" alt="Mori">
-              </button>
-              <div class="icons-display-container" id="val-1-moris"></div>
-            </div>
+        <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET Y FINAL) -->
+        <footer class="calculator-footer">
+          <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all">RESET</button>
+          <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all">FINAL DE PARTIDA</button>
+        </footer>
 
-            <!-- DC -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">DESCONEXIÓN</span>
-              <button class="btn-icon-calc" data-player="1" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="dc.png" alt="DC">
-              </button>
-              <div class="icons-display-container" id="val-1-dcs"></div>
-            </div>
+      </div> <!-- .calculator-wrapper -->
 
-            <!-- Escape -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">ESCAPE</span>
-              <button class="btn-icon-calc" data-player="1" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="escape.png" alt="Escape">
-              </button>
-              <div class="icons-display-container" id="val-1-escapes"></div>
-            </div>
-
-            <!-- First Death -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">PRIMERA MUERTE</span>
-              <button class="btn-icon-calc" data-player="1" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="first_death.png" alt="First Death">
-              </button>
-              <div class="icons-display-container" id="val-1-firstDeaths"></div>
-            </div>
-
-            <!-- Bloodpoints -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">BLOODPOINTS</span>
-              <button class="btn-icon-calc" data-player="1" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="bloodpoints.png" alt="BP">
-              </button>
-              <div class="icons-display-container" id="val-1-bloodpoints"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- FILA JUGADOR 3 (JOSEDVA) -->
-        <div class="player-row" data-index="2">
-          <div class="player-name-container">
-            <div class="hud-portrait-card">
-              <img src="char_jose.png" alt="JOSEDVA Character" class="hud-portrait-img">
-            </div>
-            <span class="player-name-static">JOSEDVA</span>
-          </div>
-          
-          <div class="player-counters">
-            <!-- Memento Mori -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">MEMENTO MORI</span>
-              <button class="btn-icon-calc" data-player="2" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="mori.png" alt="Mori">
-              </button>
-              <div class="icons-display-container" id="val-2-moris"></div>
-            </div>
-
-            <!-- DC -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">DESCONEXIÓN</span>
-              <button class="btn-icon-calc" data-player="2" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="dc.png" alt="DC">
-              </button>
-              <div class="icons-display-container" id="val-2-dcs"></div>
-            </div>
-
-            <!-- Escape -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">ESCAPE</span>
-              <button class="btn-icon-calc" data-player="2" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="escape.png" alt="Escape">
-              </button>
-              <div class="icons-display-container" id="val-2-escapes"></div>
-            </div>
-
-            <!-- First Death -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">PRIMERA MUERTE</span>
-              <button class="btn-icon-calc" data-player="2" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="first_death.png" alt="First Death">
-              </button>
-              <div class="icons-display-container" id="val-2-firstDeaths"></div>
-            </div>
-
-            <!-- Bloodpoints -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">BLOODPOINTS</span>
-              <button class="btn-icon-calc" data-player="2" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="bloodpoints.png" alt="BP">
-              </button>
-              <div class="icons-display-container" id="val-2-bloodpoints"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- FILA JUGADOR 4 (MIANCOR) -->
-        <div class="player-row" data-index="3">
-          <div class="player-name-container">
-            <div class="hud-portrait-card">
-              <img src="char_miancor.png" alt="MIANCOR Character" class="hud-portrait-img">
-            </div>
-            <span class="player-name-static">MIANCOR</span>
-          </div>
-          
-          <div class="player-counters">
-            <!-- Memento Mori -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">MEMENTO MORI</span>
-              <button class="btn-icon-calc" data-player="3" data-stat="moris" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="mori.png" alt="Mori">
-              </button>
-              <div class="icons-display-container" id="val-3-moris"></div>
-            </div>
-
-            <!-- DC -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">DESCONEXIÓN</span>
-              <button class="btn-icon-calc" data-player="3" data-stat="dcs" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="dc.png" alt="DC">
-              </button>
-              <div class="icons-display-container" id="val-3-dcs"></div>
-            </div>
-
-            <!-- Escape -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">ESCAPE</span>
-              <button class="btn-icon-calc" data-player="3" data-stat="escapes" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="escape.png" alt="Escape">
-              </button>
-              <div class="icons-display-container" id="val-3-escapes"></div>
-            </div>
-
-            <!-- First Death -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">PRIMERA MUERTE</span>
-              <button class="btn-icon-calc" data-player="3" data-stat="firstDeaths" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="first_death.png" alt="First Death">
-              </button>
-              <div class="icons-display-container" id="val-3-firstDeaths"></div>
-            </div>
-
-            <!-- Bloodpoints -->
-            <div class="counter-block">
-              <span class="counter-label-dbd">BLOODPOINTS</span>
-              <button class="btn-icon-calc" data-player="3" data-stat="bloodpoints" title="Clic izquierdo: Sumar | Clic derecho: Restar">
-                <img src="bloodpoints.png" alt="BP">
-              </button>
-              <div class="icons-display-container" id="val-3-bloodpoints"></div>
-            </div>
-          </div>
-        </div>
-
-        </main>
-
-        <!-- RECUENTO SIDEBAR PERMANENTE (LADO DERECHO) -->
-        <aside class="recap-sidebar">
+      <!-- CARD INDEPENDIENTE DEL RECUENTO (LADO DERECHO) -->
+      <div class="recap-wrapper-outside">
+        <aside class="recap-container-card">
           <h3 class="recap-sidebar-title">🏅 RECUENTO DE LA SESIÓN</h3>
           <div class="recap-list" id="recap-list-container">
             <!-- Contenido generado dinámicamente en JS -->
@@ -281,15 +296,9 @@
         </aside>
       </div>
 
-      <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET Y FINAL) -->
-      <footer class="calculator-footer">
-        <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all">RESET</button>
-        <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all">FINAL DE PARTIDA</button>
-      </footer>
+    </div> <!-- .top-panels-layout -->
 
-    </div>
-
-    <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN (FUERA DEL RECUADRO) -->
+    <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN (ABAJO COMPLETO) -->
     <div class="ranking-wrapper-outside">
       <aside class="ranking-container">
         <h3 class="ranking-title">HISTORIAL DE RANGO DE LA SESIÓN</h3>
@@ -306,6 +315,7 @@
         </div>
       </aside>
     </div>
+    
   </div> <!-- .main-content-container -->
 
   <!-- POPUP DE CONFIGURACIÓN DE CONEXIÓN (SUPABASE) -->
@@ -364,6 +374,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

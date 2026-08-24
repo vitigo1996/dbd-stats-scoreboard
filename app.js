@@ -7,7 +7,6 @@ let playersData = [];
 let supabaseClient = null;
 let realtimeChannel = null;
 let presenceChannel = null;
-let activeMatchCommitted = false; // Rastrear si la partida actual ya se subió al historial de la gráfica
 
 // --- CREDENCIALES POR DEFECTO (HARDCODED) ---
 const DEFAULT_SUPABASE_URL = "https://tonbittltrpzgncogcke.supabase.co";
@@ -327,7 +326,7 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
   setTimeout(() => {
     flyIcon.remove();
-  }, 850); // Sincronizado con la duración CSS de 0.85s
+  }, 850);
 }
 
 // --- CONFIGURACIÓN DE LA CALCULADORA Y SCOREBOARD ---
@@ -506,35 +505,27 @@ function initCalculator() {
     });
   }
 
-  // 6. Botón FINAL (Registra partida, calcula puntos y actualiza gráfica)
+  // 6. Botón FINAL (Registra partida, calcula puntos y los agrega a la gráfica siempre)
   const btnFinalTrigger = document.getElementById("btn-final-all");
   if (btnFinalTrigger) {
     btnFinalTrigger.addEventListener("click", async () => {
-      // 1. Calcular y actualizar el historial de la gráfica
+      // 1. Calcular y agregar un nuevo registro al historial de la gráfica
       playersData.forEach(p => {
         if (!p || !p.stats) return;
         const stats = p.stats;
         
-        // Puntaje de la partida activa
+        // Puntaje acumulativo calculado a partir de los datos acumulados
         const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
-        const L = stats.history.length;
-
-        if (!activeMatchCommitted) {
-          // Es un nuevo registro para esta ronda, hacemos push
-          const baseScore = L >= 1 ? stats.history[L - 1] : 0;
-          stats.history.push(baseScore + currentMatchScore);
-        } else {
-          // Ya se había registrado, actualizamos el último valor de la gráfica
-          const baseScore = L >= 2 ? stats.history[L - 2] : 0;
-          stats.history[L - 1] = baseScore + currentMatchScore;
-        }
+        
+        // Siempre hacemos push de la puntuación calculada
+        stats.history.push(currentMatchScore);
       });
 
       activeMatchCommitted = true;
       
-      // Auto-desplazar slider de historial al final para ver el nuevo punto
+      // Auto-desplazar slider de historial al final para ver el nuevo punto de partida
       const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
-      const windowSize = 6;
+      const windowSize = window.innerWidth < 820 ? 8 : 20;
       window.userChartOffset = Math.max(0, maxL - windowSize);
 
       renderCounters(); // Redibujar contadores y actualizar gráfica y sidebar
@@ -549,7 +540,7 @@ function initCalculator() {
               .update({ history: JSON.stringify(p.stats.history) })
               .eq("id", p.id);
           }
-          showToast("¡Partida registrada y gráfica actualizada!", "success");
+          showToast("¡Punto agregado a la gráfica correctamente!", "success");
         } catch (err) {
           console.error(err);
         }
@@ -765,7 +756,8 @@ function drawLineChart() {
     const container = document.getElementById("line-chart-container");
     if (!container) return;
 
-    const windowSize = 6;
+    // Ventana ajustable: 20 en PC, 8 en móviles
+    const windowSize = window.innerWidth < 820 ? 8 : 20;
     const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
     
     // Configurar el slider de historial
@@ -815,7 +807,7 @@ function drawLineChart() {
     const yMaxLimit = maxY + yPadding;
 
     const svgWidth = container.clientWidth && container.clientWidth > 0 ? container.clientWidth : 400;
-    const svgHeight = container.clientHeight && container.clientHeight > 0 ? container.clientHeight : 380;
+    const svgHeight = container.clientHeight && container.clientHeight > 0 ? container.clientHeight : 300;
 
     const paddingLeft = 32;
     const paddingRight = 45; 
@@ -966,13 +958,13 @@ function drawLineChart() {
       return { idx, finalScore, x, y };
     });
 
-    // Dispersión vertical anti-solapamiento
+    // Dispersión vertical anti-solapamiento optimizada a 30px (evita colisiones de avatares de 28px)
     finalPositions.sort((a, b) => a.y - b.y);
     for (let i = 1; i < finalPositions.length; i++) {
       const prev = finalPositions[i - 1];
       const curr = finalPositions[i];
-      if (Math.abs(curr.y - prev.y) < 18) {
-        curr.y = prev.y + 18;
+      if (Math.abs(curr.y - prev.y) < 30) {
+        curr.y = prev.y + 30;
       }
     }
 
