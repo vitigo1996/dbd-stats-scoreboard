@@ -973,7 +973,7 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 5px rgba(217, 106, 20, 0.55));
-  transition: all 0.3s ease;
+  transition: d 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
 }
 
 .chart-line-vinzent {
@@ -983,7 +983,7 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.55));
-  transition: all 0.3s ease;
+  transition: d 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
 }
 
 .chart-line-jose {
@@ -993,7 +993,7 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 5px rgba(236, 72, 153, 0.55));
-  transition: all 0.3s ease;
+  transition: d 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
 }
 
 .chart-line-miancor {
@@ -1003,7 +1003,7 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.55));
-  transition: all 0.3s ease;
+  transition: d 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
 }
 
 /* Puntos de intersección de cada partida */
@@ -1011,7 +1011,7 @@ body {
   stroke-width: 2.5px;
   fill: #0c0f12;
   cursor: pointer;
-  transition: r 0.15s ease, fill 0.15s ease;
+  transition: cx 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), cy 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), r 0.15s ease, fill 0.15s ease;
 }
 
 .chart-point-vitigo { stroke: #d96a14; }
@@ -1028,12 +1028,20 @@ body {
 .chart-avatar-border {
   stroke-width: 2.5px;
   fill: none;
-  transition: all 0.3s ease;
+  transition: cx 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), cy 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), stroke-width 0.3s ease;
 }
 .chart-avatar-border-vitigo { stroke: #d96a14; filter: drop-shadow(0 0 3px #d96a14); }
 .chart-avatar-border-vinzent { stroke: #3b82f6; filter: drop-shadow(0 0 3px #3b82f6); }
 .chart-avatar-border-jose { stroke: #ec4899; filter: drop-shadow(0 0 3px #ec4899); }
 .chart-avatar-border-miancor { stroke: #10b981; filter: drop-shadow(0 0 3px #10b981); }
+
+/* Imagen de avatar y máscara clip */
+#line-chart-container svg image {
+  transition: x 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), y 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.3s ease, height 0.3s ease;
+}
+#line-chart-container svg clipPath circle {
+  transition: cx 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), cy 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), r 0.3s ease;
+}
 
 /* --- DISTRIBUCIÓN LATERAL (MARCADORES A LA IZQ, GRÁFICA A LA DER) --- */
 .hud-main-layout {

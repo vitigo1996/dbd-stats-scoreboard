@@ -56,7 +56,7 @@ async function loadData() {
 
       if (data && data.length === 4) {
         playersData = data.map(row => ({
-          id: row.id, // ID único real de base de datos
+          id: row.id,
           name: row.name,
           stats: {
             moris: row.moris || 0,
@@ -93,7 +93,7 @@ function loadFromLocalStorage() {
       playersData.forEach((player, idx) => {
         const defaultNames = ["VITIGO", "VINZENT", "JOSEDVA", "MIANCOR"];
         player.name = defaultNames[idx];
-        player.id = player.id !== undefined ? player.id : idx; // Asegurar ID
+        player.id = player.id !== undefined ? player.id : idx;
 
         if (!player.stats) {
           player.stats = { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] };
@@ -124,13 +124,11 @@ function initializeDefaultData() {
     { id: 0, name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
     { id: 1, name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
     { id: 2, name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
-    { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } }
+    { id: 3, name: "MIANCOR", stats: { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } } }
   ];
+  // Corregir redundancia del último jugador
+  playersData[3] = { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } };
   saveData();
-}
-
-function saveData() {
-  localStorage.setItem("dbd_calculator_data", JSON.stringify(playersData));
 }
 
 // --- ACTUALIZAR REGISTROS DE JUGADORES A SUPABASE ---
@@ -170,7 +168,6 @@ function subscribeRealtime() {
       { event: "UPDATE", schema: "public", table: "players" },
       payload => {
         const updatedRow = payload.new;
-        // Búsqueda robusta por ID en lugar de asunción de índice directo
         const idx = playersData.findIndex(p => p.id === updatedRow.id);
         if (idx !== -1) {
           playersData[idx].stats = {
@@ -194,7 +191,7 @@ async function updatePlayerStat(playerIdx, statName, value) {
     const p = playersData[playerIdx];
     const stats = p.stats;
 
-    // Recalcular historial localmente de inmediato para que la gráfica reaccione
+    // Alinear y recalcular en vivo localmente antes de enviar
     const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
     const L = stats.history.length;
     const baseScore = L >= 2 ? stats.history[L - 2] : 0;
@@ -224,7 +221,6 @@ async function updatePlayerStat(playerIdx, statName, value) {
 // --- AMBIENTE DE LA HOGUERA (BRASAS FLOTANTES) ---
 function initAtmosphere() {
   if (window.innerWidth < 820) {
-    console.log("Rendimiento: Atmósfera desactivada en móviles.");
     return;
   }
   const container = document.getElementById("embers-container");
@@ -308,7 +304,6 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
 // --- CONFIGURACIÓN DE LA CALCULADORA Y SCOREBOARD ---
 function initCalculator() {
-  // 1. Eventos Click en Marcadores (+ / -)
   const iconButtons = document.querySelectorAll(".btn-icon-calc");
   iconButtons.forEach(btn => {
     btn.addEventListener("click", (e) => {
@@ -346,7 +341,6 @@ function initCalculator() {
     });
   });
 
-  // 2. Controladores del Modal de RESET unificado con opciones verticales
   const modalReset = document.getElementById("reset-confirm-modal");
   const btnResetTrigger = document.getElementById("btn-reset-all");
 
@@ -370,10 +364,8 @@ function initCalculator() {
         const L = stats.history.length;
         const currentScore = stats.history[L - 1] || 0;
 
-        // Añadir una nueva columna de partida al historial con el acumulado actual
         stats.history.push(currentScore);
 
-        // Vaciar contadores de partida actual en la pantalla
         stats.moris = 0;
         stats.dcs = 0;
         stats.escapes = 0;
@@ -399,9 +391,9 @@ function initCalculator() {
               })
               .eq("id", p.id);
           }
-          showToast("¡Partida registrada! Nueva ronda iniciada en la gráfica.", "success");
+          showToast("¡Partida registrada! Nueva ronda iniciada.", "success");
         } catch (err) {
-          console.error("Error al pasar de partida en Supabase:", err);
+          console.error(err);
         }
       } else {
         saveData();
@@ -437,7 +429,7 @@ function initCalculator() {
             if (error) throw error;
             showToast("Toda la sesión e historial reiniciados.", "info");
           } catch (err) {
-            console.error("Error al reiniciar todo en Supabase:", err);
+            console.error(err);
           }
         } else {
           saveData();
@@ -454,7 +446,6 @@ function initCalculator() {
     });
   }
 
-  // 3. Popup Modal de Recuento Final
   const modalRecap = document.getElementById("final-recap-modal");
   const btnFinalTrigger = document.getElementById("btn-final-all");
   const btnCloseRecap = document.getElementById("btn-recap-close");
@@ -472,7 +463,6 @@ function initCalculator() {
     });
   }
 
-  // 4. Modal de Ajustes (Supabase)
   const modalSettings = document.getElementById("settings-modal");
   const btnSettingsTrigger = document.getElementById("btn-settings");
   const btnCloseSettings = document.getElementById("btn-settings-close");
@@ -536,7 +526,7 @@ function initCalculator() {
   }
 }
 
-// --- CÁLCULO DINÁMICO DE GANADORES Y TÍTULOS GRACIOSOS ---
+// --- CÁLCULO DINÁMICO DE GANADORES Y TÍTULOS ---
 function calculateFinalRecap() {
   const recapContainer = document.getElementById("recap-list-container");
   if (!recapContainer) return;
@@ -582,7 +572,6 @@ function calculateFinalRecap() {
     }
   ];
 
-  // Helper para buscar líderes de una estadística
   function getLeadersFor(statName) {
     let maxVal = statName === "totalScore" ? -Infinity : -1;
     let leaders = [];
@@ -671,7 +660,15 @@ function calculateFinalRecap() {
 function renderCounters() {
   const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
 
-  // 1. Recalcular el valor en vivo del final del historial para cada jugador
+  // 1. Alinear y sincronizar longitud temporal de historiales
+  const maxL = Math.max(...playersData.map(p => p.stats.history.length), 1);
+  playersData.forEach(p => {
+    while (p.stats.history.length < maxL) {
+      p.stats.history.push(p.stats.history[p.stats.history.length - 1] || 0);
+    }
+  });
+
+  // 2. Recalcular el valor en vivo del final del historial para cada jugador
   playersData.forEach(p => {
     const stats = p.stats;
     const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
@@ -680,10 +677,9 @@ function renderCounters() {
     stats.history[L - 1] = baseScore + currentMatchScore;
   });
 
-  // Guardar localmente
   saveData();
 
-  // 2. Renderizar iconos repetidos en la interfaz
+  // 3. Renderizar iconos repetidos en la interfaz
   for (let i = 0; i < 4; i++) {
     if (playersData[i] && playersData[i].stats) {
       const stats = playersData[i].stats;
@@ -708,7 +704,6 @@ function renderCounters() {
           img.className = "mini-icon-img";
           img.title = "Haz clic aquí para eliminar este icono";
           
-          // Evento de clic en mini-icono para restar 1
           img.addEventListener("click", () => {
             if (playersData[i].stats[stat] > 0) {
               playersData[i].stats[stat]--;
@@ -725,7 +720,7 @@ function renderCounters() {
     }
   }
 
-  // 3. Dibujar la gráfica de líneas estilo Mario Party
+  // 4. Dibujar la gráfica de líneas estilo Mario Party
   drawLineChart();
 }
 
@@ -734,18 +729,20 @@ function drawLineChart() {
   const container = document.getElementById("line-chart-container");
   if (!container) return;
 
-  container.innerHTML = "";
+  const windowSize = 6;
+  const maxL = Math.max(...playersData.map(p => p.stats.history.length), 1);
+  const startIndex = Math.max(0, maxL - windowSize);
+  const currentWindowLength = maxL - startIndex;
 
-  const nMatches = playersData[0]?.stats.history.length || 1;
-
-  // Encontrar rango de puntuaciones de todos los jugadores en todo su historial
-  let allScores = [];
+  // Encontrar rango de puntuaciones visibles
+  let visibleScores = [];
   playersData.forEach(p => {
-    allScores = allScores.concat(p.stats.history || [0]);
+    const scores = (p.stats.history || [0]).slice(startIndex);
+    visibleScores = visibleScores.concat(scores);
   });
 
-  const minY = Math.min(...allScores, 0); 
-  const maxY = Math.max(...allScores, 5); 
+  const minY = Math.min(...visibleScores, 0); 
+  const maxY = Math.max(...visibleScores, 5); 
 
   const yPadding = Math.max(5, (maxY - minY) * 0.15);
   const yMinLimit = minY - yPadding;
@@ -755,21 +752,90 @@ function drawLineChart() {
   const svgHeight = container.clientHeight || 380;
 
   const paddingLeft = 32;
-  const paddingRight = 45; // margen derecho para los avatares
+  const paddingRight = 45; 
   const paddingTop = 25;
   const paddingBottom = 30;
 
   const graphWidth = svgWidth - paddingLeft - paddingRight;
   const graphHeight = svgHeight - paddingTop - paddingBottom;
 
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "100%");
-  svg.setAttribute("height", "100%");
-  svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
-  svg.setAttribute("style", "overflow: visible;");
+  // 1. Obtener o Crear el SVG
+  let svg = container.querySelector("svg");
+  if (!svg) {
+    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+    svg.setAttribute("style", "overflow: visible;");
+    container.appendChild(svg);
+  } else {
+    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+  }
 
-  // --- 1. DIBUJAR LÍNEAS DE CUADRÍCULA VERTICALES (PARTIDAS) ---
-  const gridCols = Math.max(5, nMatches);
+  // 2. Obtener o Crear Estructuras de Grupos
+  let defs = svg.querySelector("defs");
+  if (!defs) {
+    defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    svg.appendChild(defs);
+  }
+
+  let gridGroup = svg.querySelector(".grid-lines-group");
+  if (!gridGroup) {
+    gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gridGroup.setAttribute("class", "grid-lines-group");
+    svg.appendChild(gridGroup);
+  }
+
+  let yLabelsGroup = svg.querySelector(".y-labels-group");
+  if (!yLabelsGroup) {
+    yLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    yLabelsGroup.setAttribute("class", "y-labels-group");
+    svg.appendChild(yLabelsGroup);
+  }
+
+  let xLabelsGroup = svg.querySelector(".x-labels-group");
+  if (!xLabelsGroup) {
+    xLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    xLabelsGroup.setAttribute("class", "x-labels-group");
+    svg.appendChild(xLabelsGroup);
+  }
+
+  let axesLines = svg.querySelector(".axes-lines-group");
+  if (!axesLines) {
+    axesLines = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    axesLines.setAttribute("class", "axes-lines-group");
+    
+    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    xAxis.setAttribute("id", "chart-x-axis");
+    xAxis.setAttribute("class", "chart-axis-line");
+    axesLines.appendChild(xAxis);
+
+    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    yAxis.setAttribute("id", "chart-y-axis");
+    yAxis.setAttribute("class", "chart-axis-line");
+    axesLines.appendChild(yAxis);
+    
+    svg.appendChild(axesLines);
+  }
+
+  // Actualizar ejes principales
+  const xAxis = svg.querySelector("#chart-x-axis");
+  xAxis.setAttribute("x1", paddingLeft);
+  xAxis.setAttribute("y1", paddingTop + graphHeight);
+  xAxis.setAttribute("x2", paddingLeft + graphWidth);
+  xAxis.setAttribute("y2", paddingTop + graphHeight);
+
+  const yAxis = svg.querySelector("#chart-y-axis");
+  yAxis.setAttribute("x1", paddingLeft);
+  yAxis.setAttribute("y1", paddingTop);
+  yAxis.setAttribute("x2", paddingLeft);
+  yAxis.setAttribute("y2", paddingTop + graphHeight);
+
+  // --- 3. DIBUJAR LÍNEAS DE CUADRÍCULA VERTICALES (DESLIZABLES) ---
+  gridGroup.innerHTML = "";
+  xLabelsGroup.innerHTML = "";
+
+  const gridCols = Math.max(5, currentWindowLength);
   for (let i = 0; i < gridCols; i++) {
     const x = paddingLeft + (i / (gridCols - 1)) * graphWidth;
     
@@ -779,20 +845,22 @@ function drawLineChart() {
     line.setAttribute("x2", x);
     line.setAttribute("y2", paddingTop + graphHeight);
     line.setAttribute("class", "chart-grid-line");
-    svg.appendChild(line);
+    gridGroup.appendChild(line);
 
-    if (i < nMatches) {
+    if (i < currentWindowLength) {
+      const matchIdx = startIndex + i;
       const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
       label.setAttribute("x", x);
       label.setAttribute("y", paddingTop + graphHeight + 18);
       label.setAttribute("text-anchor", "middle");
       label.setAttribute("class", "chart-axis-text");
-      label.textContent = `P${i}`;
-      svg.appendChild(label);
+      label.textContent = `P${matchIdx}`;
+      xLabelsGroup.appendChild(label);
     }
   }
 
-  // --- 2. DIBUJAR LÍNEAS DE CUADRÍCULA HORIZONTALES (PUNTOS) ---
+  // --- 4. DIBUJAR LÍNEAS DE CUADRÍCULA HORIZONTALES (PUNTOS) ---
+  yLabelsGroup.innerHTML = "";
   const gridRows = 5;
   for (let i = 0; i < gridRows; i++) {
     const ratio = i / (gridRows - 1);
@@ -805,7 +873,7 @@ function drawLineChart() {
     line.setAttribute("x2", paddingLeft + graphWidth);
     line.setAttribute("y2", y);
     line.setAttribute("class", "chart-grid-line");
-    svg.appendChild(line);
+    gridGroup.appendChild(line);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
     label.setAttribute("x", paddingLeft - 8);
@@ -813,27 +881,10 @@ function drawLineChart() {
     label.setAttribute("text-anchor", "end");
     label.setAttribute("class", "chart-axis-text-y");
     label.textContent = scoreVal;
-    svg.appendChild(label);
+    yLabelsGroup.appendChild(label);
   }
 
-  // Ejes principales
-  const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  xAxis.setAttribute("x1", paddingLeft);
-  xAxis.setAttribute("y1", paddingTop + graphHeight);
-  xAxis.setAttribute("x2", paddingLeft + graphWidth);
-  xAxis.setAttribute("y2", paddingTop + graphHeight);
-  xAxis.setAttribute("class", "chart-axis-line");
-  svg.appendChild(xAxis);
-
-  const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  yAxis.setAttribute("x1", paddingLeft);
-  yAxis.setAttribute("y1", paddingTop);
-  yAxis.setAttribute("x2", paddingLeft);
-  yAxis.setAttribute("y2", paddingTop + graphHeight);
-  yAxis.setAttribute("class", "chart-axis-line");
-  svg.appendChild(yAxis);
-
-  // --- 3. DIBUJAR TRAZOS Y AVATARES DE CADA JUGADOR ---
+  // --- 5. TRAZOS Y AVATARES DE CADA JUGADOR (PERSISTENTES Y ANIMADOS) ---
   const playerConfigs = [
     { class: "vitigo", avatar: "char_vitigo.png" },
     { class: "vinzent", avatar: "char_vinzent.png" },
@@ -841,9 +892,9 @@ function drawLineChart() {
     { class: "miancor", avatar: "char_miancor.png" }
   ];
 
-  // Dispersión vertical para evitar solapamiento de avatares en puntuaciones idénticas
+  // Calcular las posiciones finales del extremo de la ventana deslizable
   const finalPositions = playersData.map((p, idx) => {
-    const scores = p.stats.history || [0];
+    const scores = (p.stats.history || [0]).slice(startIndex);
     const finalScore = scores[scores.length - 1] || 0;
     
     const x = paddingLeft + ((scores.length - 1) / (gridCols - 1)) * graphWidth;
@@ -852,21 +903,73 @@ function drawLineChart() {
     return { idx, finalScore, x, y };
   });
 
+  // Dispersión vertical anti-solapamiento
   finalPositions.sort((a, b) => a.y - b.y);
   for (let i = 1; i < finalPositions.length; i++) {
     const prev = finalPositions[i - 1];
     const curr = finalPositions[i];
     if (Math.abs(curr.y - prev.y) < 18) {
-      curr.y = prev.y + 18; 
+      curr.y = prev.y + 18;
     }
   }
 
   playersData.forEach((p, idx) => {
-    const scores = p.stats.history || [0];
-    const config = playerConfigs[idx] || { class: "vitigo", avatar: "logo.png" };
+    const config = playerConfigs[idx];
+    const scores = (p.stats.history || [0]).slice(startIndex);
 
+    // Path
+    let path = svg.querySelector(`#chart-path-${config.class}`);
+    if (!path) {
+      path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("id", `chart-path-${config.class}`);
+      path.setAttribute("class", `chart-line-${config.class}`);
+      svg.appendChild(path);
+    }
+
+    // Grupo de Círculos
+    let circlesGroup = svg.querySelector(`#chart-circles-group-${config.class}`);
+    if (!circlesGroup) {
+      circlesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      circlesGroup.setAttribute("id", `chart-circles-group-${config.class}`);
+      svg.appendChild(circlesGroup);
+    }
+
+    // Defs clipPath
+    let clipPath = defs.querySelector(`#clip-avatar-${idx}`);
+    let clipCircle;
+    if (!clipPath) {
+      clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+      clipPath.setAttribute("id", `clip-avatar-${idx}`);
+      clipCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      clipCircle.setAttribute("id", `clip-circle-${idx}`);
+      clipPath.appendChild(clipCircle);
+      defs.appendChild(clipPath);
+    } else {
+      clipCircle = clipPath.querySelector("circle");
+    }
+
+    // Elementos de imagen
+    let img = svg.querySelector(`#chart-avatar-img-${config.class}`);
+    if (!img) {
+      img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("id", `chart-avatar-img-${config.class}`);
+      img.setAttributeNS("http://www.w3.org/1999/xlink", "href", config.avatar);
+      img.setAttribute("clip-path", `url(#clip-avatar-${idx})`);
+      svg.appendChild(img);
+    }
+
+    // Borde
+    let borderCircle = svg.querySelector(`#chart-avatar-border-${config.class}`);
+    if (!borderCircle) {
+      borderCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      borderCircle.setAttribute("id", `chart-avatar-border-${config.class}`);
+      borderCircle.setAttribute("class", `chart-avatar-border chart-avatar-border-${config.class}`);
+      svg.appendChild(borderCircle);
+    }
+
+    // Calcular puntos de ventana
     let pathD = "";
-    let pointsData = [];
+    const currentPoints = [];
 
     scores.forEach((score, mIdx) => {
       const x = paddingLeft + (mIdx / (gridCols - 1)) * graphWidth;
@@ -875,65 +978,61 @@ function drawLineChart() {
       if (mIdx === 0) pathD += `M ${x} ${y}`;
       else pathD += ` L ${x} ${y}`;
 
-      pointsData.push({ x, y, score });
+      currentPoints.push({ x, y, score, matchIdx: startIndex + mIdx });
     });
 
-    // Dibujar trazo de línea
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    // Actualizar Path
     path.setAttribute("d", pathD);
-    path.setAttribute("class", `chart-line-${config.class}`);
-    svg.appendChild(path);
 
-    // Dibujar círculos en cada partida
-    pointsData.forEach((pt, mIdx) => {
-      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      circle.setAttribute("cx", pt.x);
-      circle.setAttribute("cy", pt.y);
-      circle.setAttribute("r", "4");
-      circle.setAttribute("class", `chart-point chart-point-${config.class}`);
-      circle.setAttribute("title", `${p.name}: ${pt.score} pts (Partida ${mIdx})`);
-      svg.appendChild(circle);
+    // Ajustar número de círculos visibles
+    const existingCircles = circlesGroup.querySelectorAll("circle");
+    const diff = currentPoints.length - existingCircles.length;
+
+    if (diff > 0) {
+      for (let k = 0; k < diff; k++) {
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("class", `chart-point chart-point-${config.class}`);
+        c.setAttribute("r", "4");
+        circlesGroup.appendChild(c);
+      }
+    } else if (diff < 0) {
+      for (let k = 0; k < Math.abs(diff); k++) {
+        existingCircles[existingCircles.length - 1 - k].remove();
+      }
+    }
+
+    // Actualizar coordenadas de círculos
+    const updatedCircles = circlesGroup.querySelectorAll("circle");
+    currentPoints.forEach((pt, mIdx) => {
+      const c = updatedCircles[mIdx];
+      if (c) {
+        c.setAttribute("cx", pt.x);
+        c.setAttribute("cy", pt.y);
+        c.setAttribute("title", `${p.name}: ${pt.score} pts (Partida ${pt.matchIdx})`);
+      }
     });
 
-    // Colocar avatar al final de la línea
+    // Actualizar coordenadas de Avatares (Imagen, Clip y Borde)
     const finalPos = finalPositions.find(fp => fp.idx === idx);
     if (finalPos) {
       const avatarSize = 28;
       const imgX = finalPos.x + 8;
       const imgY = finalPos.y - avatarSize / 2;
 
-      // Clip circular
-      const clipPathId = `clip-avatar-${idx}`;
-      const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-      clipPath.setAttribute("id", clipPathId);
-      const clipCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       clipCircle.setAttribute("cx", imgX + avatarSize / 2);
       clipCircle.setAttribute("cy", imgY + avatarSize / 2);
       clipCircle.setAttribute("r", avatarSize / 2);
-      clipPath.appendChild(clipCircle);
-      svg.appendChild(clipPath);
 
-      // Foto
-      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttributeNS("http://www.w3.org/1999/xlink", "href", config.avatar);
       img.setAttribute("x", imgX);
       img.setAttribute("y", imgY);
       img.setAttribute("width", avatarSize);
       img.setAttribute("height", avatarSize);
-      img.setAttribute("clip-path", `url(#${clipPathId})`);
-      svg.appendChild(img);
 
-      // Borde circular coloreado
-      const borderCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       borderCircle.setAttribute("cx", imgX + avatarSize / 2);
       borderCircle.setAttribute("cy", imgY + avatarSize / 2);
       borderCircle.setAttribute("r", avatarSize / 2);
-      borderCircle.setAttribute("class", `chart-avatar-border chart-avatar-border-${config.class}`);
-      svg.appendChild(borderCircle);
     }
   });
-
-  container.appendChild(svg);
 }
 
 // --- MOSTRAR TOAST ---
