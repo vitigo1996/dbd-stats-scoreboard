@@ -486,6 +486,12 @@ function calculateFinalRecap() {
 
   const categories = [
     {
+      key: "totalScore",
+      title: "👑 EL CAMPEÓN DE LA SESIÓN",
+      desc: "El sobreviviente definitivo. Dominó la tabla con el mayor puntaje de rango total.",
+      suffix: "PTS RANGO"
+    },
+    {
       key: "escapes",
       title: "🏆 EL MVP",
       desc: "El que sabe para que sirven las puertas de salida, sacando la cara por el equipo.",
@@ -519,11 +525,18 @@ function calculateFinalRecap() {
 
   // Helper para buscar líderes de una estadística
   function getLeadersFor(statName) {
-    let maxVal = -1;
+    let maxVal = statName === "totalScore" ? -Infinity : -1;
     let leaders = [];
 
     playersData.forEach(player => {
-      const val = player.stats[statName] || 0;
+      let val;
+      if (statName === "totalScore") {
+        const stats = player.stats;
+        val = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+      } else {
+        val = player.stats[statName] || 0;
+      }
+
       if (val > maxVal) {
         maxVal = val;
         leaders = [player];
@@ -551,10 +564,12 @@ function calculateFinalRecap() {
     let scoreText = "0";
     let avatarsHtml = "";
 
-    // Si el valor máximo es mayor a cero, renderizar ganadores (con soporte de empates)
-    if (result.maxVal > 0) {
+    const hasWinner = cat.key === "totalScore" ? true : result.maxVal > 0;
+
+    // Si el valor máximo es válido, renderizar ganadores (con soporte de empates)
+    if (hasWinner) {
       winnerName = result.leaders.map(l => l.name).join(" & ");
-      scoreText = result.maxVal;
+      scoreText = (cat.key === "totalScore" && result.maxVal > 0 ? "+" : "") + result.maxVal;
 
       result.leaders.forEach(leader => {
         const avatarSrc = getAvatarFor(leader.name);
@@ -645,6 +660,9 @@ function renderCounters() {
       });
     }
   }
+
+  // Actualizar también las barras de ranking
+  renderRanking();
 }
 
 // --- MOSTRAR TOAST ---
@@ -659,4 +677,57 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toast.classList.remove("show");
   }, 3500);
+}
+
+// --- RENDERIZAR RANKING GENERAL CON HISTOGRAMA DINÁMICO ---
+function renderRanking() {
+  const container = document.getElementById("ranking-chart-bars");
+  if (!container) return;
+
+  // Calcular puntajes de rango
+  const scoredPlayers = playersData.map((player, idx) => {
+    const stats = player.stats;
+    const score = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+    return {
+      name: player.name,
+      score: score,
+      idx: idx
+    };
+  });
+
+  // Ordenar de mayor a menor puntaje
+  const sortedPlayers = [...scoredPlayers].sort((a, b) => b.score - a.score);
+
+  // Encontrar el valor absoluto máximo para el porcentaje proporcional
+  const maxVal = Math.max(...scoredPlayers.map(p => Math.abs(p.score)), 1);
+
+  container.innerHTML = "";
+
+  sortedPlayers.forEach((p, rankIndex) => {
+    const isPositive = p.score >= 0;
+    const absScore = Math.abs(p.score);
+    const percent = (absScore / maxVal) * 100;
+    const scoreSign = p.score > 0 ? "+" : "";
+    const scoreClass = isPositive ? "score-positive" : "score-negative";
+    const barBg = isPositive 
+      ? "linear-gradient(90deg, #d96a14, #ff9f1c)" 
+      : "linear-gradient(90deg, #bd1a1a, #e63946)";
+    const barShadow = isPositive
+      ? "0 0 10px rgba(217, 106, 20, 0.6)"
+      : "0 0 10px rgba(189, 26, 26, 0.6)";
+
+    const rowHtml = `
+      <div class="ranking-bar-row">
+        <div class="ranking-player-info">
+          <span class="ranking-position">#${rankIndex + 1}</span>
+          <span class="ranking-player-name">${p.name}</span>
+        </div>
+        <div class="ranking-bar-track">
+          <div class="ranking-bar-fill" style="width: ${percent}%; background: ${barBg}; box-shadow: ${barShadow};"></div>
+        </div>
+        <span class="ranking-score-val ${scoreClass}">${scoreSign}${p.score} pts</span>
+      </div>
+    `;
+    container.appendChild(document.createRange().createContextualFragment(rowHtml));
+  });
 }
