@@ -562,37 +562,37 @@ function calculateFinalRecap() {
   const categories = [
     {
       key: "totalScore",
-      title: "👑 MVP",
+      title: "MVP",
       desc: "El superviviente definitivo.",
       suffix: "PTS RANGO"
     },
     {
       key: "escapes",
-      title: "🏆 ESCAPISTA",
+      title: "ESCAPISTA",
       desc: "Se escapa a toda costa.",
       suffix: "ESCAPE"
     },
     {
       key: "bloodpoints",
-      title: "💰 MAS APORTE DURANTE LA PARTIDA",
+      title: "MAS APORTE DURANTE LA PARTIDA",
       desc: "Se la juega por el equipo.",
       suffix: "BLOODPOINTS"
     },
     {
       key: "dcs",
-      title: "🔌 EL ROMPE-TOBILLOS DE KILLERS",
-      desc: "El terror del Asesino. Lo hizo halar el cable.",
+      title: "EL ROMPE-TOBILLOS DE KILLERS",
+      desc: "El terror del killer. Lo hizo halar el cable.",
       suffix: "KILLER DC"
     },
     {
       key: "moris",
-      title: "💀 EL CATADOR DE MORIS",
+      title: "EL CATADOR DE MORIS",
       desc: "El cliente premium de los asesinatos en primera persona.",
       suffix: "MEMENTO MORI"
     },
     {
       key: "firstDeaths",
-      title: "📦 EL BULTO",
+      title: "EL BULTO",
       desc: "El mejor amigo del killer.",
       suffix: "FIRST DEATH"
     }
