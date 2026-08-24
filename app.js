@@ -515,7 +515,7 @@ function initCalculator() {
         const stats = p.stats;
         
         // Puntaje acumulativo calculado a partir de los datos acumulados
-        const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+        const currentMatchScore = (stats.escapes * 10) - (stats.moris * 4) - (stats.firstDeaths * 8) + (stats.bloodpoints * 8) + (stats.dcs * 15);
         
         // Siempre hacemos push de la puntuación calculada
         stats.history.push(currentMatchScore);
