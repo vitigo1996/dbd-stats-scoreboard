@@ -562,39 +562,39 @@ function calculateFinalRecap() {
   const categories = [
     {
       key: "totalScore",
-      title: "👑 EL CAMPEÓN",
-      desc: "El sobreviviente definitivo. Líder del ranking total.",
-      suffix: "PTS"
+      title: "👑 EL CAMPEÓN DE LA SESIÓN",
+      desc: "El sobreviviente definitivo. Dominó la tabla con el mayor puntaje de rango total.",
+      suffix: "PTS RANGO"
     },
     {
       key: "escapes",
-      title: "🏆 MVP ESCAPES",
-      desc: "El que sabe salir por las puertas.",
-      suffix: "ESC"
+      title: "🏆 EL MVP",
+      desc: "El que sabe para que sirven las puertas de salida, sacando la cara por el equipo.",
+      suffix: "ESCAPE"
+    },
+    {
+      key: "bloodpoints",
+      title: "💰 EL BANQUERO DE LA ENTIDAD",
+      desc: "El que se fue con los bolsillos llenos de puntos de sangre. Aportando al máximo.",
+      suffix: "BLOODPOINTS"
     },
     {
       key: "dcs",
-      title: "🔌 CABLE PULLER",
-      desc: "Hizo desconectar al killer.",
-      suffix: "DC"
+      title: "🔌 EL ROMPE-TOBILLOS DE KILLERS",
+      desc: "El terror del Asesino. Lo hizo halar el cable.",
+      suffix: "KILLER DC"
     },
     {
       key: "moris",
-      title: "💀 CATADOR DE MORIS",
-      desc: "Cliente premium de la muerte.",
-      suffix: "MORI"
+      title: "💀 EL CATADOR DE MORIS",
+      desc: "El cliente premium de los asesinatos personalizados. Siempre listo para salir en su foto de recuerdo.",
+      suffix: "MEMENTO MORI"
     },
     {
       key: "firstDeaths",
       title: "📦 EL BULTO",
-      desc: "Saco de boxeo oficial.",
-      suffix: "MUERTO"
-    },
-    {
-      key: "bloodpoints",
-      title: "💰 EL BANQUERO",
-      desc: "Aportó más puntos de sangre.",
-      suffix: "BLOOD"
+      desc: "El saco de boxeo oficial. Corre a los brazos del killer a la primera.",
+      suffix: "FIRST DEATH"
     }
   ];
 

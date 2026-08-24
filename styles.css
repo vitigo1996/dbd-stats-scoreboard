@@ -654,10 +654,10 @@ body {
   padding-bottom: 0.4rem;
 }
 
-/* LISTA DE RECUENTO VERTICAL OPTIMIZADA */
+/* LISTA DE RECUENTO VERTICAL EN 2 COLUMNAS */
 .recap-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
   gap: 8px;
   width: 100%;
 }
