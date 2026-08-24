@@ -22,14 +22,22 @@
     
     <!-- TÍTULO PRINCIPAL (LOGO DBD) Y AJUSTES -->
     <header class="calculator-header">
-      <button class="btn-settings-toggle" id="btn-settings" title="Configurar Supabase">⚙️</button>
+      <div class="top-right-menu-container">
+        <span class="viewer-counter-badge" id="viewer-count-display">🟢 1 Viendo</span>
+        <div class="options-dropdown">
+          <button class="btn-options-toggle" id="btn-options-menu">CONEXIÓN DB ▼</button>
+          <div class="dropdown-menu-card" id="dropdown-menu-content">
+            <button class="dropdown-item" id="btn-menu-db">Ajustes Supabase</button>
+            <button class="dropdown-item item-danger" id="btn-menu-reset-all">Reiniciar Gráfica</button>
+          </div>
+        </div>
+      </div>
       <img src="logo.png" alt="DbD Logo" class="header-logo">
       <h1 class="header-title">DEAD BY <span>STATS</span></h1>
     </header>
 
-    <!-- TABLERO DE JUGADORES Y HISTORIAL LATERAL -->
-    <div class="hud-main-layout">
-      <main class="scoreboard-container">
+    <!-- TABLERO DE JUGADORES (4 FILAS) -->
+    <main class="scoreboard-container">
       
       <!-- FILA JUGADOR 1 (VITIGO) -->
       <div class="player-row" data-index="0">
@@ -259,19 +267,7 @@
         </div>
       </div>
 
-      </main>
-
-      <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN (LADO DERECHO) -->
-      <aside class="ranking-container">
-        <h3 class="ranking-title">HISTORIAL DE RANGO</h3>
-        <div class="ranking-chart-wrapper">
-          <div id="line-chart-container">
-            <!-- El SVG de la gráfica se inyectará aquí dinámicamente -->
-          </div>
-        </div>
-      </aside>
-
-    </div>
+    </main>
 
     <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET Y FINAL) -->
     <footer class="calculator-footer">
@@ -281,17 +277,16 @@
 
   </div>
 
-  <!-- POPUP DE CONFIRMACIÓN DE RESET MODAL -->
-  <div id="reset-confirm-modal" class="modal-overlay">
-    <div class="modal-card reset-modal-card">
-      <h2 class="modal-title">MENÚ DE REINICIO</h2>
-      <p class="modal-desc" style="color: #aaa; font-size: 0.9rem; margin-bottom: 1.2rem; text-align: center; font-family: var(--font-body);">Selecciona qué acción deseas realizar con el Scoreboard:</p>
-      <div class="modal-actions-vertical">
-        <button id="btn-reset-next-match" class="btn-modal btn-reset-option option-next-match">SIGUIENTE PARTIDA</button>
-        <button id="btn-reset-clear-all" class="btn-modal btn-reset-option option-clear-all">REINICIAR SESIÓN</button>
-        <button id="btn-reset-cancel" class="btn-modal btn-reset-option option-cancel">CANCELAR</button>
+  <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN (FUERA DEL RECUADRO) -->
+  <div class="ranking-wrapper-outside">
+    <aside class="ranking-container">
+      <h3 class="ranking-title">HISTORIAL DE RANGO DE LA SESIÓN</h3>
+      <div class="ranking-chart-wrapper">
+        <div id="line-chart-container">
+          <!-- El SVG de la gráfica se inyectará aquí dinámicamente -->
+        </div>
       </div>
-    </div>
+    </aside>
   </div>
 
   <!-- POPUP DE RECUENTO FINAL GRACIOSO (TAMAÑO GRANDE) -->
@@ -365,6 +360,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

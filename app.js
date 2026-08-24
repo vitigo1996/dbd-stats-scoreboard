@@ -6,6 +6,7 @@
 let playersData = [];
 let supabaseClient = null;
 let realtimeChannel = null;
+let presenceChannel = null;
 
 // --- CREDENCIALES POR DEFECTO (HARDCODED) ---
 const DEFAULT_SUPABASE_URL = "https://tonbittltrpzgncogcke.supabase.co";
@@ -69,6 +70,7 @@ async function loadData() {
         }));
         renderCounters();
         subscribeRealtime();
+        initViewerPresence();
         showToast("Conectado a Supabase en tiempo real.", "success");
         return;
       } else {
@@ -112,6 +114,7 @@ function loadFromLocalStorage() {
     initializeDefaultData();
   }
   renderCounters();
+  initViewerPresence();
 }
 
 function initializeDefaultData() {
@@ -122,6 +125,50 @@ function initializeDefaultData() {
     { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } }
   ];
   saveData();
+}
+
+// --- CONTADOR DE VISUALIZACIÓN EN TIEMPO REAL (SUPABASE PRESENCE) ---
+function initViewerPresence() {
+  if (presenceChannel) {
+    try {
+      if (supabaseClient) supabaseClient.removeChannel(presenceChannel);
+    } catch (e) {}
+    presenceChannel = null;
+  }
+
+  const display = document.getElementById("viewer-count-display");
+  if (!display) return;
+
+  if (!supabaseClient) {
+    display.textContent = "🟢 1 Viendo (Local)";
+    return;
+  }
+
+  try {
+    presenceChannel = supabaseClient.channel("online-users", {
+      config: { presence: { key: "user" } }
+    });
+
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        const count = Object.keys(state).length || 1;
+        display.textContent = `🟢 ${count} Viendo`;
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({ online_at: new Date().toISOString() });
+        }
+      });
+  } catch (err) {
+    console.error("Error al iniciar presencia:", err);
+    display.textContent = "🟢 1 Viendo";
+  }
+}
+
+// --- GUARDAR EN LOCAL STORAGE ---
+function saveData() {
+  localStorage.setItem("dbd_calculator_data", JSON.stringify(playersData));
 }
 
 // --- ACTUALIZAR REGISTROS DE JUGADORES A SUPABASE ---
@@ -290,11 +337,12 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
   setTimeout(() => {
     flyIcon.remove();
-  }, 1250);
+  }, 500); // Sincronizado con la duración CSS de 0.5s
 }
 
 // --- CONFIGURACIÓN DE LA CALCULADORA Y SCOREBOARD ---
 function initCalculator() {
+  // 1. Botones de estadísticas interactivos (clic izquierdo suma, clic derecho resta)
   const iconButtons = document.querySelectorAll(".btn-icon-calc");
   iconButtons.forEach(btn => {
     btn.addEventListener("click", (e) => {
@@ -332,130 +380,26 @@ function initCalculator() {
     });
   });
 
-  const modalReset = document.getElementById("reset-confirm-modal");
-  const btnResetTrigger = document.getElementById("btn-reset-all");
+  // 2. Interacción del menú desplegable superior
+  const btnOptionsMenu = document.getElementById("btn-options-menu");
+  const dropdownMenuContent = document.getElementById("dropdown-menu-content");
 
-  const btnResetNextMatch = document.getElementById("btn-reset-next-match");
-  const btnResetClearAll = document.getElementById("btn-reset-clear-all");
-  const btnResetCancel = document.getElementById("btn-reset-cancel");
-
-  if (btnResetTrigger && modalReset) {
-    btnResetTrigger.addEventListener("click", () => {
-      modalReset.classList.add("show");
+  if (btnOptionsMenu && dropdownMenuContent) {
+    btnOptionsMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdownMenuContent.classList.toggle("show");
     });
-  }
 
-  // Opción A: Siguiente Partida
-  if (btnResetNextMatch) {
-    btnResetNextMatch.addEventListener("click", async () => {
-      modalReset.classList.remove("show");
-
-      playersData.forEach(p => {
-        const stats = p.stats;
-        const L = stats.history.length;
-        const currentScore = stats.history[L - 1] || 0;
-
-        stats.history.push(currentScore);
-
-        stats.moris = 0;
-        stats.dcs = 0;
-        stats.escapes = 0;
-        stats.firstDeaths = 0;
-        stats.bloodpoints = 0;
-      });
-
-      renderCounters();
-
-      if (supabaseClient) {
-        try {
-          for (let i = 0; i < 4; i++) {
-            const p = playersData[i];
-            await supabaseClient
-              .from("players")
-              .update({
-                moris: 0,
-                dcs: 0,
-                escapes: 0,
-                first_deaths: 0,
-                bloodpoints: 0,
-                history: JSON.stringify(p.stats.history)
-              })
-              .eq("id", p.id);
-          }
-          showToast("¡Partida registrada! Nueva ronda iniciada.", "success");
-        } catch (err) {
-          console.error(err);
-        }
-      } else {
-        saveData();
-        showToast("Partida registrada localmente. Nueva ronda lista.", "success");
+    document.addEventListener("click", (e) => {
+      if (!dropdownMenuContent.contains(e.target) && e.target !== btnOptionsMenu) {
+        dropdownMenuContent.classList.remove("show");
       }
     });
   }
 
-  // Opción B: Reiniciar Sesión
-  if (btnResetClearAll) {
-    btnResetClearAll.addEventListener("click", async () => {
-      modalReset.classList.remove("show");
-
-      if (confirm("¿Reiniciar toda la sesión e historial de la gráfica a cero?")) {
-        playersData.forEach(p => {
-          p.stats.moris = 0;
-          p.stats.dcs = 0;
-          p.stats.escapes = 0;
-          p.stats.firstDeaths = 0;
-          p.stats.bloodpoints = 0;
-          p.stats.history = [0];
-        });
-
-        renderCounters();
-
-        if (supabaseClient) {
-          try {
-            const { error } = await supabaseClient
-              .from("players")
-              .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0, history: "[0]" })
-              .in("id", playersData.map(p => p.id));
-            
-            if (error) throw error;
-            showToast("Toda la sesión e historial reiniciados.", "info");
-          } catch (err) {
-            console.error(err);
-          }
-        } else {
-          saveData();
-          showToast("Sesión reiniciada localmente.", "info");
-        }
-      }
-    });
-  }
-
-  // Opción C: Cancelar
-  if (btnResetCancel) {
-    btnResetCancel.addEventListener("click", () => {
-      modalReset.classList.remove("show");
-    });
-  }
-
-  const modalRecap = document.getElementById("final-recap-modal");
-  const btnFinalTrigger = document.getElementById("btn-final-all");
-  const btnCloseRecap = document.getElementById("btn-recap-close");
-
-  if (btnFinalTrigger && modalRecap) {
-    btnFinalTrigger.addEventListener("click", () => {
-      calculateFinalRecap();
-      modalRecap.classList.add("show");
-    });
-  }
-
-  if (btnCloseRecap && modalRecap) {
-    btnCloseRecap.addEventListener("click", () => {
-      modalRecap.classList.remove("show");
-    });
-  }
-
+  // 3. Menú -> Conexión DB (Ajustes Supabase)
   const modalSettings = document.getElementById("settings-modal");
-  const btnSettingsTrigger = document.getElementById("btn-settings");
+  const btnMenuDb = document.getElementById("btn-menu-db");
   const btnCloseSettings = document.getElementById("btn-settings-close");
   const btnSaveSettings = document.getElementById("btn-settings-save");
   const btnDisconnectSettings = document.getElementById("btn-settings-disconnect");
@@ -463,8 +407,9 @@ function initCalculator() {
   const urlInput = document.getElementById("supabase-url-input");
   const keyInput = document.getElementById("supabase-key-input");
 
-  if (btnSettingsTrigger && modalSettings) {
-    btnSettingsTrigger.addEventListener("click", () => {
+  if (btnMenuDb && modalSettings) {
+    btnMenuDb.addEventListener("click", () => {
+      dropdownMenuContent.classList.remove("show");
       urlInput.value = localStorage.getItem("dbd_supabase_url") || DEFAULT_SUPABASE_URL;
       keyInput.value = localStorage.getItem("dbd_supabase_key") || DEFAULT_SUPABASE_KEY;
       modalSettings.classList.add("show");
@@ -513,6 +458,112 @@ function initCalculator() {
       modalSettings.classList.remove("show");
       showToast("Supabase desconectado. Ejecutando en local.", "info");
       loadFromLocalStorage();
+    });
+  }
+
+  // 4. Menú -> Reiniciar Gráfica (Reiniciar Sesión completa)
+  const btnMenuResetAll = document.getElementById("btn-menu-reset-all");
+  if (btnMenuResetAll) {
+    btnMenuResetAll.addEventListener("click", async () => {
+      dropdownMenuContent.classList.remove("show");
+
+      if (confirm("¿Reiniciar toda la sesión e historial de la gráfica a cero?")) {
+        playersData.forEach(p => {
+          p.stats.moris = 0;
+          p.stats.dcs = 0;
+          p.stats.escapes = 0;
+          p.stats.firstDeaths = 0;
+          p.stats.bloodpoints = 0;
+          p.stats.history = [0];
+        });
+
+        renderCounters();
+
+        if (supabaseClient) {
+          try {
+            await supabaseClient
+              .from("players")
+              .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0, history: "[0]" })
+              .in("id", playersData.map(p => p.id));
+            
+            showToast("Toda la sesión e historial reiniciados.", "info");
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          saveData();
+          showToast("Sesión reiniciada localmente.", "info");
+        }
+      }
+    });
+  }
+
+  // 5. Botón RESET (En el footer) -> Registra partida actual y pone contadores a 0
+  const btnResetTrigger = document.getElementById("btn-reset-all");
+  if (btnResetTrigger) {
+    btnResetTrigger.addEventListener("click", async () => {
+      if (confirm("¿Reiniciar marcadores para registrar la partida actual y empezar la siguiente?")) {
+        playersData.forEach(p => {
+          const stats = p.stats;
+          const L = stats.history.length;
+          const currentScore = stats.history[L - 1] || 0;
+
+          // Conservar puntaje acumulado en el historial de la gráfica
+          stats.history.push(currentScore);
+
+          // Poner contadores de la partida a 0
+          stats.moris = 0;
+          stats.dcs = 0;
+          stats.escapes = 0;
+          stats.firstDeaths = 0;
+          stats.bloodpoints = 0;
+        });
+
+        renderCounters();
+
+        if (supabaseClient) {
+          try {
+            for (let i = 0; i < 4; i++) {
+              const p = playersData[i];
+              await supabaseClient
+                .from("players")
+                .update({
+                  moris: 0,
+                  dcs: 0,
+                  escapes: 0,
+                  first_deaths: 0,
+                  bloodpoints: 0,
+                  history: JSON.stringify(p.stats.history)
+                })
+                .eq("id", p.id);
+            }
+            showToast("¡Partida registrada! Nueva ronda iniciada.", "success");
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          saveData();
+          showToast("Partida registrada localmente. Nueva ronda lista.", "success");
+        }
+      }
+    });
+  }
+
+  // 6. Botón FINAL (Recuento gracioso)
+  const modalRecap = document.getElementById("final-recap-modal");
+  const btnFinalTrigger = document.getElementById("btn-final-all");
+  const btnCloseRecap = document.getElementById("btn-recap-close");
+
+  if (btnFinalTrigger && modalRecap) {
+    btnFinalTrigger.addEventListener("click", () => {
+      calculateFinalRecap();
+      modalRecap.classList.add("show");
+    });
+  }
+
+  if (btnCloseRecap && modalRecap) {
+    btnCloseRecap.addEventListener("click", () => {
+      modalRecap.classList.remove("show");
     });
   }
 }
