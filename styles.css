@@ -1382,6 +1382,27 @@ body {
     max-width: 100%;
   }
 
+  .calculator-footer {
+    flex-direction: row;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .calculator-footer .btn-ready-dbd {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 0.95rem;
+    padding: 0 4px;
+  }
+
+  .settings-modal-card {
+    max-width: 95% !important;
+    padding: 1rem !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
   .ranking-wrapper-outside {
     margin: 0;
     padding: 0.6rem 0.8rem;
