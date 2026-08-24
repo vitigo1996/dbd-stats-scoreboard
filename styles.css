@@ -114,7 +114,7 @@ body {
 /* --- WRAPPER Y HEADER --- */
 .main-content-container {
   width: 100%;
-  max-width: 950px;
+  max-width: 1150px;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -124,7 +124,7 @@ body {
 
 .calculator-wrapper {
   width: 100%;
-  max-width: 950px;
+  max-width: 1150px;
   background: rgba(17, 22, 25, 0.88); 
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -1144,7 +1144,7 @@ body {
 }
 
 .calculator-wrapper {
-  flex: 1.35;
+  flex: 1.1;
   width: auto;
   max-width: 100%;
   background: rgba(17, 22, 25, 0.88); 
@@ -1174,7 +1174,7 @@ body {
 }
 
 .recap-wrapper-outside {
-  flex: 0.65;
+  flex: 0.9;
   background: rgba(17, 22, 25, 0.88); 
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -1186,7 +1186,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: visible; /* No permitir desplazamientos ni barras de scroll */
 }
 
 .recap-wrapper-outside::before {
@@ -1221,7 +1221,7 @@ body {
 
 .ranking-wrapper-outside {
   width: 100%;
-  max-width: 950px;
+  max-width: 1150px;
   background: rgba(17, 22, 25, 0.88); 
   border: 1px solid var(--color-border);
   border-radius: 6px;
