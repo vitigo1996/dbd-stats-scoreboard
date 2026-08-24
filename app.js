@@ -7,6 +7,7 @@ let playersData = [];
 let supabaseClient = null;
 let realtimeChannel = null;
 let presenceChannel = null;
+let activeMatchCommitted = false; // Rastrear si la partida actual ya se subió al historial de la gráfica
 
 // --- CREDENCIALES POR DEFECTO (HARDCODED) ---
 const DEFAULT_SUPABASE_URL = "https://tonbittltrpzgncogcke.supabase.co";
@@ -229,23 +230,12 @@ function subscribeRealtime() {
 async function updatePlayerStat(playerIdx, statName, value) {
   if (playersData[playerIdx] && playersData[playerIdx].stats) {
     const p = playersData[playerIdx];
-    const stats = p.stats;
-
-    // Alinear y recalcular en vivo localmente antes de enviar
-    const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
-    const L = stats.history.length;
-    const baseScore = L >= 2 ? stats.history[L - 2] : 0;
-    stats.history[L - 1] = baseScore + currentMatchScore;
-
     if (supabaseClient && p.id !== undefined) {
       const dbColName = statName === "firstDeaths" ? "first_deaths" : statName;
       try {
         await supabaseClient
           .from("players")
-          .update({ 
-            [dbColName]: value,
-            history: JSON.stringify(stats.history) 
-          })
+          .update({ [dbColName]: value })
           .eq("id", p.id);
       } catch (err) {
         console.error("Error actualizando Supabase en vivo:", err);
@@ -337,7 +327,7 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
   setTimeout(() => {
     flyIcon.remove();
-  }, 500); // Sincronizado con la duración CSS de 0.5s
+  }, 850); // Sincronizado con la duración CSS de 0.85s
 }
 
 // --- CONFIGURACIÓN DE LA CALCULADORA Y SCOREBOARD ---
@@ -477,6 +467,7 @@ function initCalculator() {
           p.stats.history = [0];
         });
 
+        activeMatchCommitted = false;
         renderCounters();
 
         if (supabaseClient) {
@@ -498,20 +489,15 @@ function initCalculator() {
     });
   }
 
-  // 5. Botón RESET (En el footer) -> Registra partida actual y pone contadores a 0
+  // 5. Botón RESET (En el footer) -> Solo limpia las stats en pantalla, no afecta gráfica
   const btnResetTrigger = document.getElementById("btn-reset-all");
   if (btnResetTrigger) {
     btnResetTrigger.addEventListener("click", async () => {
-      if (confirm("¿Reiniciar marcadores para registrar la partida actual y empezar la siguiente?")) {
+      if (confirm("¿Reiniciar marcadores de la tabla a cero para una nueva partida?")) {
         playersData.forEach(p => {
+          if (!p || !p.stats) return;
           const stats = p.stats;
-          const L = stats.history.length;
-          const currentScore = stats.history[L - 1] || 0;
-
-          // Conservar puntaje acumulado en el historial de la gráfica
-          stats.history.push(currentScore);
-
-          // Poner contadores de la partida a 0
+          // Poner contadores a 0
           stats.moris = 0;
           stats.dcs = 0;
           stats.escapes = 0;
@@ -519,45 +505,88 @@ function initCalculator() {
           stats.bloodpoints = 0;
         });
 
-        renderCounters();
+        activeMatchCommitted = false; // Nueva partida iniciada
+        renderCounters(); // Redibujar contadores (gráfica estable)
 
         if (supabaseClient) {
           try {
-            for (let i = 0; i < 4; i++) {
-              const p = playersData[i];
-              await supabaseClient
-                .from("players")
-                .update({
-                  moris: 0,
-                  dcs: 0,
-                  escapes: 0,
-                  first_deaths: 0,
-                  bloodpoints: 0,
-                  history: JSON.stringify(p.stats.history)
-                })
-                .eq("id", p.id);
-            }
-            showToast("¡Partida registrada! Nueva ronda iniciada.", "success");
+            const ids = playersData.map(p => p.id);
+            await supabaseClient
+              .from("players")
+              .update({
+                moris: 0,
+                dcs: 0,
+                escapes: 0,
+                first_deaths: 0,
+                bloodpoints: 0
+              })
+              .in("id", ids);
+            showToast("Marcadores de la tabla reiniciados.", "success");
           } catch (err) {
             console.error(err);
           }
         } else {
           saveData();
-          showToast("Partida registrada localmente. Nueva ronda lista.", "success");
+          showToast("Marcadores locales reiniciados.", "success");
         }
       }
     });
   }
 
-  // 6. Botón FINAL (Recuento gracioso)
+  // 6. Botón FINAL (Registra partida, calcula puntos y actualiza gráfica)
   const modalRecap = document.getElementById("final-recap-modal");
   const btnFinalTrigger = document.getElementById("btn-final-all");
   const btnCloseRecap = document.getElementById("btn-recap-close");
 
-  if (btnFinalTrigger && modalRecap) {
-    btnFinalTrigger.addEventListener("click", () => {
-      calculateFinalRecap();
-      modalRecap.classList.add("show");
+  if (btnFinalTrigger) {
+    btnFinalTrigger.addEventListener("click", async () => {
+      // 1. Calcular y actualizar el historial de la gráfica
+      playersData.forEach(p => {
+        if (!p || !p.stats) return;
+        const stats = p.stats;
+        
+        // Puntaje de la partida activa
+        const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+        const L = stats.history.length;
+
+        if (!activeMatchCommitted) {
+          // Es un nuevo registro para esta ronda, hacemos push
+          const baseScore = L >= 1 ? stats.history[L - 1] : 0;
+          stats.history.push(baseScore + currentMatchScore);
+        } else {
+          // Ya se había registrado, actualizamos el último valor de la gráfica
+          const baseScore = L >= 2 ? stats.history[L - 2] : 0;
+          stats.history[L - 1] = baseScore + currentMatchScore;
+        }
+      });
+
+      activeMatchCommitted = true;
+      renderCounters(); // Redibujar contadores y actualizar gráfica
+
+      // 2. Subir el historial de la gráfica a Supabase o Local
+      if (supabaseClient) {
+        try {
+          for (let i = 0; i < 4; i++) {
+            const p = playersData[i];
+            await supabaseClient
+              .from("players")
+              .update({ history: JSON.stringify(p.stats.history) })
+              .eq("id", p.id);
+          }
+          showToast("¡Gráfica actualizada con el final de partida!", "success");
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        saveData();
+        showToast("Historial guardado localmente.", "success");
+      }
+
+      // 3. Mostrar el recuento gracioso
+      if (modalRecap) {
+        calculateFinalRecap();
+        modalRecap.classList.add("show");
+      }
     });
   }
 
@@ -712,19 +741,9 @@ function renderCounters() {
       }
     });
 
-    // 2. Recalcular el valor en vivo del final del historial para cada jugador
-    playersData.forEach(p => {
-      if (!p || !p.stats) return;
-      const stats = p.stats;
-      const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
-      const L = stats.history.length;
-      const baseScore = L >= 2 ? stats.history[L - 2] : 0;
-      stats.history[L - 1] = baseScore + currentMatchScore;
-    });
-
     saveData();
 
-    // 3. Renderizar iconos repetidos en la interfaz
+    // 2. Renderizar iconos repetidos en la interfaz
     for (let i = 0; i < 4; i++) {
       if (playersData[i] && playersData[i].stats) {
         const stats = playersData[i].stats;
@@ -768,7 +787,7 @@ function renderCounters() {
     console.error("Error rendering counters:", err);
   }
 
-  // 4. Dibujar la gráfica de líneas estilo Mario Party
+  // 3. Dibujar la gráfica de líneas estilo Mario Party
   drawLineChart();
 }
 
