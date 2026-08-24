@@ -152,7 +152,13 @@ function initViewerPresence() {
     presenceChannel
       .on("presence", { event: "sync" }, () => {
         const state = presenceChannel.presenceState();
-        const count = Object.keys(state).length || 1;
+        let count = 0;
+        Object.keys(state).forEach(key => {
+          if (Array.isArray(state[key])) {
+            count += state[key].length;
+          }
+        });
+        if (count === 0) count = 1;
         display.textContent = `🟢 ${count} Viendo`;
       })
       .subscribe(async (status) => {
