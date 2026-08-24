@@ -193,15 +193,13 @@ async function updatePlayerStat(playerIdx, statName, value) {
     if (supabaseClient && p.id !== undefined) {
       const dbColName = statName === "firstDeaths" ? "first_deaths" : statName;
       try {
-        const { error } = await supabaseClient
+        await supabaseClient
           .from("players")
           .update({ 
             [dbColName]: value,
             history: JSON.stringify(stats.history) 
           })
           .eq("id", p.id);
-        
-        if (error) throw error;
       } catch (err) {
         console.error("Error actualizando Supabase en vivo:", err);
       }
@@ -651,66 +649,72 @@ function calculateFinalRecap() {
 
 // --- RENDERIZAR VALORES DE CONTADORES CON ICONOS REPETIDOS ---
 function renderCounters() {
-  const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
+  try {
+    const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
 
-  // 1. Alinear y sincronizar longitud temporal de historiales
-  const maxL = Math.max(...playersData.map(p => p.stats.history.length), 1);
-  playersData.forEach(p => {
-    while (p.stats.history.length < maxL) {
-      p.stats.history.push(p.stats.history[p.stats.history.length - 1] || 0);
-    }
-  });
+    // 1. Alinear y sincronizar longitud temporal de historiales
+    const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
+    playersData.forEach(p => {
+      if (!p || !p.stats || !p.stats.history) return;
+      while (p.stats.history.length < maxL) {
+        p.stats.history.push(p.stats.history[p.stats.history.length - 1] || 0);
+      }
+    });
 
-  // 2. Recalcular el valor en vivo del final del historial para cada jugador
-  playersData.forEach(p => {
-    const stats = p.stats;
-    const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
-    const L = stats.history.length;
-    const baseScore = L >= 2 ? stats.history[L - 2] : 0;
-    stats.history[L - 1] = baseScore + currentMatchScore;
-  });
+    // 2. Recalcular el valor en vivo del final del historial para cada jugador
+    playersData.forEach(p => {
+      if (!p || !p.stats) return;
+      const stats = p.stats;
+      const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+      const L = stats.history.length;
+      const baseScore = L >= 2 ? stats.history[L - 2] : 0;
+      stats.history[L - 1] = baseScore + currentMatchScore;
+    });
 
-  saveData();
+    saveData();
 
-  // 3. Renderizar iconos repetidos en la interfaz
-  for (let i = 0; i < 4; i++) {
-    if (playersData[i] && playersData[i].stats) {
-      const stats = playersData[i].stats;
-      
-      statsList.forEach(stat => {
-        const container = document.getElementById(`val-${i}-${stat}`);
-        if (!container) return;
-
-        container.innerHTML = "";
-        const count = stats[stat] || 0;
+    // 3. Renderizar iconos repetidos en la interfaz
+    for (let i = 0; i < 4; i++) {
+      if (playersData[i] && playersData[i].stats) {
+        const stats = playersData[i].stats;
         
-        for (let c = 0; c < count; c++) {
-          const img = document.createElement("img");
-          
-          if (stat === "moris") img.src = "mori.png";
-          else if (stat === "dcs") img.src = "dc.png";
-          else if (stat === "escapes") img.src = "escape.png";
-          else if (stat === "firstDeaths") img.src = "first_death.png";
-          else if (stat === "bloodpoints") img.src = "bloodpoints.png";
-          
-          img.alt = stat;
-          img.className = "mini-icon-img";
-          img.title = "Haz clic aquí para eliminar este icono";
-          
-          img.addEventListener("click", () => {
-            if (playersData[i].stats[stat] > 0) {
-              playersData[i].stats[stat]--;
-              renderCounters();
-              playAudioFor(stat);
-              
-              updatePlayerStat(i, stat, playersData[i].stats[stat]);
-            }
-          });
+        statsList.forEach(stat => {
+          const container = document.getElementById(`val-${i}-${stat}`);
+          if (!container) return;
 
-          container.appendChild(img);
-        }
-      });
+          container.innerHTML = "";
+          const count = stats[stat] || 0;
+          
+          for (let c = 0; c < count; c++) {
+            const img = document.createElement("img");
+            
+            if (stat === "moris") img.src = "mori.png";
+            else if (stat === "dcs") img.src = "dc.png";
+            else if (stat === "escapes") img.src = "escape.png";
+            else if (stat === "firstDeaths") img.src = "first_death.png";
+            else if (stat === "bloodpoints") img.src = "bloodpoints.png";
+            
+            img.alt = stat;
+            img.className = "mini-icon-img";
+            img.title = "Haz clic aquí para eliminar este icono";
+            
+            img.addEventListener("click", () => {
+              if (playersData[i].stats[stat] > 0) {
+                playersData[i].stats[stat]--;
+                renderCounters();
+                playAudioFor(stat);
+                
+                updatePlayerStat(i, stat, playersData[i].stats[stat]);
+              }
+            });
+
+            container.appendChild(img);
+          }
+        });
+      }
     }
+  } catch (err) {
+    console.error("Error rendering counters:", err);
   }
 
   // 4. Dibujar la gráfica de líneas estilo Mario Party
@@ -719,315 +723,323 @@ function renderCounters() {
 
 // --- DIBUJAR GRÁFICA DE LÍNEAS TEMPORAL (ESTILO MARIO PARTY) ---
 function drawLineChart() {
-  const container = document.getElementById("line-chart-container");
-  if (!container) return;
+  try {
+    const container = document.getElementById("line-chart-container");
+    if (!container) return;
 
-  const windowSize = 6;
-  const maxL = Math.max(...playersData.map(p => p.stats.history.length), 1);
-  const startIndex = Math.max(0, maxL - windowSize);
-  const currentWindowLength = maxL - startIndex;
+    const windowSize = 6;
+    const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
+    const startIndex = Math.max(0, maxL - windowSize);
+    const currentWindowLength = maxL - startIndex;
 
-  // Encontrar rango de puntuaciones visibles
-  let visibleScores = [];
-  playersData.forEach(p => {
-    const scores = (p.stats.history || [0]).slice(startIndex);
-    visibleScores = visibleScores.concat(scores);
-  });
+    // Encontrar rango de puntuaciones visibles
+    let visibleScores = [];
+    playersData.forEach(p => {
+      if (!p || !p.stats || !p.stats.history) return;
+      const scores = (p.stats.history || [0]).slice(startIndex);
+      visibleScores = visibleScores.concat(scores);
+    });
 
-  const minY = Math.min(...visibleScores, 0); 
-  const maxY = Math.max(...visibleScores, 5); 
+    const minY = Math.min(...visibleScores, 0); 
+    const maxY = Math.max(...visibleScores, 5); 
 
-  const yPadding = Math.max(5, (maxY - minY) * 0.15);
-  const yMinLimit = minY - yPadding;
-  const yMaxLimit = maxY + yPadding;
+    const yPadding = Math.max(5, (maxY - minY) * 0.15);
+    const yMinLimit = minY - yPadding;
+    const yMaxLimit = maxY + yPadding;
 
-  const svgWidth = container.clientWidth && container.clientWidth > 0 ? container.clientWidth : 400;
-  const svgHeight = container.clientHeight && container.clientHeight > 0 ? container.clientHeight : 380;
+    const svgWidth = container.clientWidth && container.clientWidth > 0 ? container.clientWidth : 400;
+    const svgHeight = container.clientHeight && container.clientHeight > 0 ? container.clientHeight : 380;
 
-  const paddingLeft = 32;
-  const paddingRight = 45; 
-  const paddingTop = 25;
-  const paddingBottom = 30;
+    const paddingLeft = 32;
+    const paddingRight = 45; 
+    const paddingTop = 25;
+    const paddingBottom = 30;
 
-  const graphWidth = svgWidth - paddingLeft - paddingRight;
-  const graphHeight = svgHeight - paddingTop - paddingBottom;
+    const graphWidth = svgWidth - paddingLeft - paddingRight;
+    const graphHeight = svgHeight - paddingTop - paddingBottom;
 
-  // 1. Obtener o Crear el SVG
-  let svg = container.querySelector("svg");
-  if (!svg) {
-    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", svgWidth);
-    svg.setAttribute("height", svgHeight);
-    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
-    svg.setAttribute("style", "overflow: visible;");
-    container.appendChild(svg);
-  } else {
-    svg.setAttribute("width", svgWidth);
-    svg.setAttribute("height", svgHeight);
-    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
-  }
-
-  // 2. Obtener o Crear Estructuras de Grupos
-  let defs = svg.querySelector("defs");
-  if (!defs) {
-    defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    svg.appendChild(defs);
-  }
-
-  let gridGroup = svg.querySelector(".grid-lines-group");
-  if (!gridGroup) {
-    gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    gridGroup.setAttribute("class", "grid-lines-group");
-    svg.appendChild(gridGroup);
-  }
-
-  let yLabelsGroup = svg.querySelector(".y-labels-group");
-  if (!yLabelsGroup) {
-    yLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    yLabelsGroup.setAttribute("class", "y-labels-group");
-    svg.appendChild(yLabelsGroup);
-  }
-
-  let xLabelsGroup = svg.querySelector(".x-labels-group");
-  if (!xLabelsGroup) {
-    xLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    xLabelsGroup.setAttribute("class", "x-labels-group");
-    svg.appendChild(xLabelsGroup);
-  }
-
-  let axesLines = svg.querySelector(".axes-lines-group");
-  if (!axesLines) {
-    axesLines = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    axesLines.setAttribute("class", "axes-lines-group");
-    
-    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    xAxis.setAttribute("id", "chart-x-axis");
-    xAxis.setAttribute("class", "chart-axis-line");
-    axesLines.appendChild(xAxis);
-
-    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    yAxis.setAttribute("id", "chart-y-axis");
-    yAxis.setAttribute("class", "chart-axis-line");
-    axesLines.appendChild(yAxis);
-    
-    svg.appendChild(axesLines);
-  }
-
-  // Actualizar ejes principales
-  const xAxis = svg.querySelector("#chart-x-axis");
-  xAxis.setAttribute("x1", paddingLeft);
-  xAxis.setAttribute("y1", paddingTop + graphHeight);
-  xAxis.setAttribute("x2", paddingLeft + graphWidth);
-  xAxis.setAttribute("y2", paddingTop + graphHeight);
-
-  const yAxis = svg.querySelector("#chart-y-axis");
-  yAxis.setAttribute("x1", paddingLeft);
-  yAxis.setAttribute("y1", paddingTop);
-  yAxis.setAttribute("x2", paddingLeft);
-  yAxis.setAttribute("y2", paddingTop + graphHeight);
-
-  // --- 3. DIBUJAR LÍNEAS DE CUADRÍCULA VERTICALES (DESLIZABLES) ---
-  gridGroup.innerHTML = "";
-  xLabelsGroup.innerHTML = "";
-
-  const gridCols = Math.max(5, currentWindowLength);
-  for (let i = 0; i < gridCols; i++) {
-    const x = paddingLeft + (i / (gridCols - 1)) * graphWidth;
-    
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x);
-    line.setAttribute("y1", paddingTop);
-    line.setAttribute("x2", x);
-    line.setAttribute("y2", paddingTop + graphHeight);
-    line.setAttribute("class", "chart-grid-line");
-    gridGroup.appendChild(line);
-
-    if (i < currentWindowLength) {
-      const matchIdx = startIndex + i;
-      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      label.setAttribute("x", x);
-      label.setAttribute("y", paddingTop + graphHeight + 18);
-      label.setAttribute("text-anchor", "middle");
-      label.setAttribute("class", "chart-axis-text");
-      label.textContent = `P${matchIdx}`;
-      xLabelsGroup.appendChild(label);
-    }
-  }
-
-  // --- 4. DIBUJAR LÍNEAS DE CUADRÍCULA HORIZONTALES (PUNTOS) ---
-  yLabelsGroup.innerHTML = "";
-  const gridRows = 5;
-  for (let i = 0; i < gridRows; i++) {
-    const ratio = i / (gridRows - 1);
-    const y = paddingTop + ratio * graphHeight;
-    const scoreVal = Math.round(yMaxLimit - ratio * (yMaxLimit - yMinLimit));
-
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", paddingLeft);
-    line.setAttribute("y1", y);
-    line.setAttribute("x2", paddingLeft + graphWidth);
-    line.setAttribute("y2", y);
-    line.setAttribute("class", "chart-grid-line");
-    gridGroup.appendChild(line);
-
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("x", paddingLeft - 8);
-    label.setAttribute("y", y + 4);
-    label.setAttribute("text-anchor", "end");
-    label.setAttribute("class", "chart-axis-text-y");
-    label.textContent = scoreVal;
-    yLabelsGroup.appendChild(label);
-  }
-
-  // --- 5. TRAZOS Y AVATARES DE CADA JUGADOR (PERSISTENTES Y ANIMADOS) ---
-  const playerConfigs = [
-    { class: "vitigo", avatar: "char_vitigo.png" },
-    { class: "vinzent", avatar: "char_vinzent.png" },
-    { class: "jose", avatar: "char_jose.png" },
-    { class: "miancor", avatar: "char_miancor.png" }
-  ];
-
-  // Calcular las posiciones finales del extremo de la ventana deslizable
-  const finalPositions = playersData.map((p, idx) => {
-    const scores = (p.stats.history || [0]).slice(startIndex);
-    const finalScore = scores[scores.length - 1] || 0;
-    
-    const x = paddingLeft + ((scores.length - 1) / (gridCols - 1)) * graphWidth;
-    const y = paddingTop + graphHeight - ((finalScore - yMinLimit) / (yMaxLimit - yMinLimit)) * graphHeight;
-
-    return { idx, finalScore, x, y };
-  });
-
-  // Dispersión vertical anti-solapamiento
-  finalPositions.sort((a, b) => a.y - b.y);
-  for (let i = 1; i < finalPositions.length; i++) {
-    const prev = finalPositions[i - 1];
-    const curr = finalPositions[i];
-    if (Math.abs(curr.y - prev.y) < 18) {
-      curr.y = prev.y + 18;
-    }
-  }
-
-  playersData.forEach((p, idx) => {
-    const config = playerConfigs[idx];
-    const scores = (p.stats.history || [0]).slice(startIndex);
-
-    // Path
-    let path = svg.querySelector(`#chart-path-${config.class}`);
-    if (!path) {
-      path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("id", `chart-path-${config.class}`);
-      path.setAttribute("class", `chart-line-${config.class}`);
-      svg.appendChild(path);
-    }
-
-    // Grupo de Círculos
-    let circlesGroup = svg.querySelector(`#chart-circles-group-${config.class}`);
-    if (!circlesGroup) {
-      circlesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      circlesGroup.setAttribute("id", `chart-circles-group-${config.class}`);
-      svg.appendChild(circlesGroup);
-    }
-
-    // Defs clipPath
-    let clipPath = defs.querySelector(`#clip-avatar-${idx}`);
-    let clipCircle;
-    if (!clipPath) {
-      clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-      clipPath.setAttribute("id", `clip-avatar-${idx}`);
-      clipCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      clipCircle.setAttribute("id", `clip-circle-${idx}`);
-      clipPath.appendChild(clipCircle);
-      defs.appendChild(clipPath);
+    // 1. Obtener o Crear el SVG
+    let svg = container.querySelector("svg");
+    if (!svg) {
+      svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", svgWidth);
+      svg.setAttribute("height", svgHeight);
+      svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+      svg.setAttribute("style", "overflow: visible;");
+      container.appendChild(svg);
     } else {
-      clipCircle = clipPath.querySelector("circle");
+      svg.setAttribute("width", svgWidth);
+      svg.setAttribute("height", svgHeight);
+      svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
     }
 
-    // Elementos de imagen
-    let img = svg.querySelector(`#chart-avatar-img-${config.class}`);
-    if (!img) {
-      img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttribute("id", `chart-avatar-img-${config.class}`);
-      img.setAttributeNS("http://www.w3.org/1999/xlink", "href", config.avatar);
-      img.setAttribute("clip-path", `url(#clip-avatar-${idx})`);
-      svg.appendChild(img);
+    // 2. Obtener o Crear Estructuras de Grupos
+    let defs = svg.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      svg.appendChild(defs);
     }
 
-    // Borde
-    let borderCircle = svg.querySelector(`#chart-avatar-border-${config.class}`);
-    if (!borderCircle) {
-      borderCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      borderCircle.setAttribute("id", `chart-avatar-border-${config.class}`);
-      borderCircle.setAttribute("class", `chart-avatar-border chart-avatar-border-${config.class}`);
-      svg.appendChild(borderCircle);
+    let gridGroup = svg.querySelector(".grid-lines-group");
+    if (!gridGroup) {
+      gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      gridGroup.setAttribute("class", "grid-lines-group");
+      svg.appendChild(gridGroup);
     }
 
-    // Calcular puntos de ventana
-    let pathD = "";
-    const currentPoints = [];
+    let yLabelsGroup = svg.querySelector(".y-labels-group");
+    if (!yLabelsGroup) {
+      yLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      yLabelsGroup.setAttribute("class", "y-labels-group");
+      svg.appendChild(yLabelsGroup);
+    }
 
-    scores.forEach((score, mIdx) => {
-      const x = paddingLeft + (mIdx / (gridCols - 1)) * graphWidth;
-      const y = paddingTop + graphHeight - ((score - yMinLimit) / (yMaxLimit - yMinLimit)) * graphHeight;
+    let xLabelsGroup = svg.querySelector(".x-labels-group");
+    if (!xLabelsGroup) {
+      xLabelsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      xLabelsGroup.setAttribute("class", "x-labels-group");
+      svg.appendChild(xLabelsGroup);
+    }
 
-      if (mIdx === 0) pathD += `M ${x} ${y}`;
-      else pathD += ` L ${x} ${y}`;
+    // Asegurar Ejes Principales (Dirección Plana sin Grupos Intermedios)
+    let xAxis = svg.querySelector("#chart-x-axis");
+    if (!xAxis) {
+      xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      xAxis.setAttribute("id", "chart-x-axis");
+      xAxis.setAttribute("class", "chart-axis-line");
+      svg.appendChild(xAxis);
+    }
+    xAxis.setAttribute("x1", paddingLeft);
+    xAxis.setAttribute("y1", paddingTop + graphHeight);
+    xAxis.setAttribute("x2", paddingLeft + graphWidth);
+    xAxis.setAttribute("y2", paddingTop + graphHeight);
 
-      currentPoints.push({ x, y, score, matchIdx: startIndex + mIdx });
+    let yAxis = svg.querySelector("#chart-y-axis");
+    if (!yAxis) {
+      yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      yAxis.setAttribute("id", "chart-y-axis");
+      yAxis.setAttribute("class", "chart-axis-line");
+      svg.appendChild(yAxis);
+    }
+    yAxis.setAttribute("x1", paddingLeft);
+    yAxis.setAttribute("y1", paddingTop);
+    yAxis.setAttribute("x2", paddingLeft);
+    yAxis.setAttribute("y2", paddingTop + graphHeight);
+
+    // --- 3. DIBUJAR LÍNEAS DE CUADRÍCULA VERTICALES (DESLIZABLES) ---
+    gridGroup.innerHTML = "";
+    xLabelsGroup.innerHTML = "";
+
+    const gridCols = Math.max(5, currentWindowLength);
+    for (let i = 0; i < gridCols; i++) {
+      const x = paddingLeft + (i / (gridCols - 1)) * graphWidth;
+      
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x);
+      line.setAttribute("y1", paddingTop);
+      line.setAttribute("x2", x);
+      line.setAttribute("y2", paddingTop + graphHeight);
+      line.setAttribute("class", "chart-grid-line");
+      gridGroup.appendChild(line);
+
+      if (i < currentWindowLength) {
+        const matchIdx = startIndex + i;
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", paddingTop + graphHeight + 18);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("class", "chart-axis-text");
+        label.textContent = `P${matchIdx}`;
+        xLabelsGroup.appendChild(label);
+      }
+    }
+
+    // --- 4. DIBUJAR LÍNEAS DE CUADRÍCULA HORIZONTALES (PUNTOS) ---
+    yLabelsGroup.innerHTML = "";
+    const gridRows = 5;
+    for (let i = 0; i < gridRows; i++) {
+      const ratio = i / (gridRows - 1);
+      const y = paddingTop + ratio * graphHeight;
+      const scoreVal = Math.round(yMaxLimit - ratio * (yMaxLimit - yMinLimit));
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", paddingLeft);
+      line.setAttribute("y1", y);
+      line.setAttribute("x2", paddingLeft + graphWidth);
+      line.setAttribute("y2", y);
+      line.setAttribute("class", "chart-grid-line");
+      gridGroup.appendChild(line);
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("x", paddingLeft - 8);
+      label.setAttribute("y", y + 4);
+      label.setAttribute("text-anchor", "end");
+      label.setAttribute("class", "chart-axis-text-y");
+      label.textContent = scoreVal;
+      yLabelsGroup.appendChild(label);
+    }
+
+    // --- 5. TRAZOS Y AVATARES DE CADA JUGADOR (PERSISTENTES Y ANIMADOS) ---
+    const playerConfigs = [
+      { class: "vitigo", avatar: "char_vitigo.png" },
+      { class: "vinzent", avatar: "char_vinzent.png" },
+      { class: "jose", avatar: "char_jose.png" },
+      { class: "miancor", avatar: "char_miancor.png" }
+    ];
+
+    // Calcular las posiciones finales del extremo de la ventana deslizable
+    const finalPositions = playersData.map((p, idx) => {
+      if (!p || !p.stats || !p.stats.history) return { idx, finalScore: 0, x: paddingLeft, y: paddingTop + graphHeight };
+      const scores = p.stats.history.slice(startIndex);
+      const finalScore = scores[scores.length - 1] || 0;
+      
+      const x = paddingLeft + ((scores.length - 1) / (gridCols - 1)) * graphWidth;
+      const y = paddingTop + graphHeight - ((finalScore - yMinLimit) / (yMaxLimit - yMinLimit)) * graphHeight;
+
+      return { idx, finalScore, x, y };
     });
 
-    // Actualizar Path
-    path.setAttribute("d", pathD);
-
-    // Ajustar número de círculos visibles
-    const existingCircles = circlesGroup.querySelectorAll("circle");
-    const diff = currentPoints.length - existingCircles.length;
-
-    if (diff > 0) {
-      for (let k = 0; k < diff; k++) {
-        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        c.setAttribute("class", `chart-point chart-point-${config.class}`);
-        c.setAttribute("r", "4");
-        circlesGroup.appendChild(c);
-      }
-    } else if (diff < 0) {
-      for (let k = 0; k < Math.abs(diff); k++) {
-        existingCircles[existingCircles.length - 1 - k].remove();
+    // Dispersión vertical anti-solapamiento
+    finalPositions.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < finalPositions.length; i++) {
+      const prev = finalPositions[i - 1];
+      const curr = finalPositions[i];
+      if (Math.abs(curr.y - prev.y) < 18) {
+        curr.y = prev.y + 18;
       }
     }
 
-    // Actualizar coordenadas de círculos
-    const updatedCircles = circlesGroup.querySelectorAll("circle");
-    currentPoints.forEach((pt, mIdx) => {
-      const c = updatedCircles[mIdx];
-      if (c) {
-        c.setAttribute("cx", pt.x);
-        c.setAttribute("cy", pt.y);
-        c.setAttribute("title", `${p.name}: ${pt.score} pts (Partida ${pt.matchIdx})`);
+    playersData.forEach((p, idx) => {
+      if (!p || !p.stats || !p.stats.history) return;
+      const config = playerConfigs[idx];
+      const scores = p.stats.history.slice(startIndex);
+
+      // Path
+      let path = svg.querySelector(`#chart-path-${config.class}`);
+      if (!path) {
+        path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("id", `chart-path-${config.class}`);
+        path.setAttribute("class", `chart-line-${config.class}`);
+        svg.appendChild(path);
+      }
+
+      // Grupo de Círculos
+      let circlesGroup = svg.querySelector(`#chart-circles-group-${config.class}`);
+      if (!circlesGroup) {
+        circlesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        circlesGroup.setAttribute("id", `chart-circles-group-${config.class}`);
+        svg.appendChild(circlesGroup);
+      }
+
+      // Defs clipPath
+      let clipPath = defs.querySelector(`#clip-avatar-${idx}`);
+      let clipCircle;
+      if (!clipPath) {
+        clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clipPath.setAttribute("id", `clip-avatar-${idx}`);
+        clipCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        clipCircle.setAttribute("id", `clip-circle-${idx}`);
+        clipCircle.setAttribute("r", "14");
+        clipPath.appendChild(clipCircle);
+        defs.appendChild(clipPath);
+      } else {
+        clipCircle = clipPath.querySelector("circle");
+        if (!clipCircle) {
+          clipCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          clipCircle.setAttribute("id", `clip-circle-${idx}`);
+          clipCircle.setAttribute("r", "14");
+          clipPath.appendChild(clipCircle);
+        }
+      }
+
+      // Elementos de imagen
+      let img = svg.querySelector(`#chart-avatar-img-${config.class}`);
+      if (!img) {
+        img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        img.setAttribute("id", `chart-avatar-img-${config.class}`);
+        img.setAttribute("href", config.avatar);
+        img.setAttribute("clip-path", `url(#clip-avatar-${idx})`);
+        svg.appendChild(img);
+      }
+
+      // Borde
+      let borderCircle = svg.querySelector(`#chart-avatar-border-${config.class}`);
+      if (!borderCircle) {
+        borderCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        borderCircle.setAttribute("id", `chart-avatar-border-${config.class}`);
+        borderCircle.setAttribute("class", `chart-avatar-border chart-avatar-border-${config.class}`);
+        svg.appendChild(borderCircle);
+      }
+
+      // Calcular puntos de ventana
+      let pathD = "";
+      const currentPoints = [];
+
+      scores.forEach((score, mIdx) => {
+        const x = paddingLeft + (mIdx / (gridCols - 1)) * graphWidth;
+        const y = paddingTop + graphHeight - ((score - yMinLimit) / (yMaxLimit - yMinLimit)) * graphHeight;
+
+        if (mIdx === 0) pathD += `M ${x} ${y}`;
+        else pathD += ` L ${x} ${y}`;
+
+        currentPoints.push({ x, y, score, matchIdx: startIndex + mIdx });
+      });
+
+      // Actualizar Path
+      path.setAttribute("d", pathD);
+
+      // Ajustar número de círculos visibles
+      const existingCircles = circlesGroup.querySelectorAll("circle");
+      const diff = currentPoints.length - existingCircles.length;
+
+      if (diff > 0) {
+        for (let k = 0; k < diff; k++) {
+          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          c.setAttribute("class", `chart-point chart-point-${config.class}`);
+          c.setAttribute("r", "4");
+          circlesGroup.appendChild(c);
+        }
+      } else if (diff < 0) {
+        for (let k = 0; k < Math.abs(diff); k++) {
+          existingCircles[existingCircles.length - 1 - k].remove();
+        }
+      }
+
+      // Actualizar coordenadas de círculos
+      const updatedCircles = circlesGroup.querySelectorAll("circle");
+      currentPoints.forEach((pt, mIdx) => {
+        const c = updatedCircles[mIdx];
+        if (c) {
+          c.setAttribute("cx", pt.x);
+          c.setAttribute("cy", pt.y);
+          c.setAttribute("title", `${p.name}: ${pt.score} pts (Partida ${pt.matchIdx})`);
+        }
+      });
+
+      // Actualizar coordenadas de Avatares (Imagen, Clip y Borde)
+      const finalPos = finalPositions.find(fp => fp.idx === idx);
+      if (finalPos) {
+        const avatarSize = 28;
+        const imgX = finalPos.x + 8;
+        const imgY = finalPos.y - avatarSize / 2;
+
+        clipCircle.setAttribute("cx", imgX + avatarSize / 2);
+        clipCircle.setAttribute("cy", imgY + avatarSize / 2);
+        clipCircle.setAttribute("r", avatarSize / 2);
+
+        img.setAttribute("x", imgX);
+        img.setAttribute("y", imgY);
+        img.setAttribute("width", avatarSize);
+        img.setAttribute("height", avatarSize);
+
+        borderCircle.setAttribute("cx", imgX + avatarSize / 2);
+        borderCircle.setAttribute("cy", imgY + avatarSize / 2);
+        borderCircle.setAttribute("r", avatarSize / 2);
       }
     });
-
-    // Actualizar coordenadas de Avatares (Imagen, Clip y Borde)
-    const finalPos = finalPositions.find(fp => fp.idx === idx);
-    if (finalPos) {
-      const avatarSize = 28;
-      const imgX = finalPos.x + 8;
-      const imgY = finalPos.y - avatarSize / 2;
-
-      clipCircle.setAttribute("cx", imgX + avatarSize / 2);
-      clipCircle.setAttribute("cy", imgY + avatarSize / 2);
-      clipCircle.setAttribute("r", avatarSize / 2);
-
-      img.setAttribute("x", imgX);
-      img.setAttribute("y", imgY);
-      img.setAttribute("width", avatarSize);
-      img.setAttribute("height", avatarSize);
-
-      borderCircle.setAttribute("cx", imgX + avatarSize / 2);
-      borderCircle.setAttribute("cy", imgY + avatarSize / 2);
-      borderCircle.setAttribute("r", avatarSize / 2);
-    }
-  });
+  } catch (err) {
+    console.error("Error drawing line chart:", err);
+  }
 }
 
 // --- MOSTRAR TOAST ---
