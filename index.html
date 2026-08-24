@@ -260,18 +260,24 @@
 
       <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN -->
       <section class="ranking-container">
-        <h3 class="ranking-title">RANKING GENERAL DE LA SESIÓN</h3>
-        <div class="ranking-chart" id="ranking-chart-bars">
-          <!-- Las barras de ranking se inyectarán aquí dinámicamente en JS -->
+        <h3 class="ranking-title">HISTORIAL DE RANGO DE LA SESIÓN</h3>
+        <div class="ranking-chart-wrapper">
+          <div id="line-chart-container">
+            <!-- El SVG de la gráfica se inyectará aquí dinámicamente -->
+          </div>
         </div>
       </section>
 
     </main>
 
-    <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET A LA IZQ, FINAL A LA DER) -->
+    <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN -->
     <footer class="calculator-footer">
-      <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all">RESET</button>
-      <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all">FINAL</button>
+      <div class="footer-left-buttons">
+        <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all" title="Reiniciar toda la sesión y el historial">REINICIAR TODO</button>
+        <button class="btn-ready-dbd btn-undo-bottom" id="btn-undo-match" title="Deshacer última partida registrada" style="display: none;">DESHACER</button>
+      </div>
+      <button class="btn-ready-dbd btn-record-bottom" id="btn-record-match" title="Registrar partida actual y limpiar contadores">REGISTRAR PARTIDA</button>
+      <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all" title="Ver recuento final">FINAL</button>
     </footer>
 
   </div>
@@ -327,19 +333,20 @@
   dcs INT DEFAULT 0,
   escapes INT DEFAULT 0,
   first_deaths INT DEFAULT 0,
-  bloodpoints INT DEFAULT 0
+  bloodpoints INT DEFAULT 0,
+  history TEXT DEFAULT '[]'
 );
 ALTER TABLE public.players REPLICA IDENTITY FULL;
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
   CREATE PUBLICATION supabase_realtime FOR TABLE public.players;
 COMMIT;
-INSERT INTO public.players (id, name, moris, dcs, escapes, first_deaths, bloodpoints)
+INSERT INTO public.players (id, name, moris, dcs, escapes, first_deaths, bloodpoints, history)
 VALUES
-  (0, 'VITIGO', 0, 0, 0, 0, 0),
-  (1, 'VINZENT', 0, 0, 0, 0, 0),
-  (2, 'JOSEDVA', 0, 0, 0, 0, 0),
-  (3, 'MIANCOR', 0, 0, 0, 0, 0)
+  (0, 'VITIGO', 0, 0, 0, 0, 0, '[0]'),
+  (1, 'VINZENT', 0, 0, 0, 0, 0, '[0]'),
+  (2, 'JOSEDVA', 0, 0, 0, 0, 0, '[0]'),
+  (3, 'MIANCOR', 0, 0, 0, 0, 0, '[0]')
 ON CONFLICT (id) DO NOTHING;</textarea>
       </div>
 
@@ -357,6 +364,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
