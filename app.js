@@ -267,6 +267,23 @@ function initAtmosphere() {
   }, 900);
 }
 
+// --- SISTEMA DE AUDIO DEL JUEGO ---
+function playAudioFor(statName) {
+  try {
+    let filename = "";
+    if (statName === "moris") filename = "mori.mp3";
+    else if (statName === "dcs") filename = "dc.mp3";
+    else if (statName === "escapes") filename = "escape.mp3";
+    else if (statName === "firstDeaths") filename = "first_death.mp3";
+
+    if (filename) {
+      const audio = new Audio(filename);
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+    }
+  } catch (err) {}
+}
+
 function createEmber(container, isInitial = false) {
   const ember = document.createElement("div");
   ember.className = "ember";
@@ -289,23 +306,6 @@ function createEmber(container, isInitial = false) {
   setTimeout(() => {
     ember.remove();
   }, (duration + (isInitial ? 0 : delay)) * 1000);
-}
-
-// --- SISTEMA DE AUDIO DEL JUEGO ---
-function playAudioFor(statName) {
-  try {
-    let filename = "";
-    if (statName === "moris") filename = "mori.mp3";
-    else if (statName === "dcs") filename = "dc.mp3";
-    else if (statName === "escapes") filename = "escape.mp3";
-    else if (statName === "firstDeaths") filename = "first_death.mp3";
-
-    if (filename) {
-      const audio = new Audio(filename);
-      audio.volume = 0.5;
-      audio.play().catch(() => {});
-    }
-  } catch (err) {}
 }
 
 // --- ANIMACIÓN FLOTANTE (VUELO) ---
@@ -451,62 +451,34 @@ function initCalculator() {
     });
   }
 
-  // 4. Menú -> Reiniciar Gráfica (Reiniciar Sesión completa)
-  const btnMenuResetAll = document.getElementById("btn-menu-reset-all");
-  if (btnMenuResetAll) {
-    btnMenuResetAll.addEventListener("click", async () => {
-      dropdownMenuContent.classList.remove("show");
-
-      if (confirm("¿Reiniciar toda la sesión e historial de la gráfica a cero?")) {
-        playersData.forEach(p => {
-          p.stats.moris = 0;
-          p.stats.dcs = 0;
-          p.stats.escapes = 0;
-          p.stats.firstDeaths = 0;
-          p.stats.bloodpoints = 0;
-          p.stats.history = [0];
-        });
-
-        activeMatchCommitted = false;
-        renderCounters();
-
-        if (supabaseClient) {
-          try {
-            await supabaseClient
-              .from("players")
-              .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0, history: "[0]" })
-              .in("id", playersData.map(p => p.id));
-            
-            showToast("Toda la sesión e historial reiniciados.", "info");
-          } catch (err) {
-            console.error(err);
-          }
-        } else {
-          saveData();
-          showToast("Sesión reiniciada localmente.", "info");
-        }
-      }
+  // 4. Slider de historial de partidas
+  const slider = document.getElementById("chart-history-slider");
+  if (slider) {
+    slider.addEventListener("input", (e) => {
+      window.userChartOffset = parseInt(e.target.value);
+      drawLineChart();
     });
   }
 
-  // 5. Botón RESET (En el footer) -> Solo limpia las stats en pantalla, no afecta gráfica
+  // 5. Botón RESET (En el footer) -> Limpia marcadores a 0 y borra historial de la gráfica
   const btnResetTrigger = document.getElementById("btn-reset-all");
   if (btnResetTrigger) {
     btnResetTrigger.addEventListener("click", async () => {
-      if (confirm("¿Reiniciar marcadores de la tabla a cero para una nueva partida?")) {
+      if (confirm("¿Reiniciar TODOS los marcadores y limpiar el historial de la gráfica por completo?")) {
         playersData.forEach(p => {
           if (!p || !p.stats) return;
           const stats = p.stats;
-          // Poner contadores a 0
           stats.moris = 0;
           stats.dcs = 0;
           stats.escapes = 0;
           stats.firstDeaths = 0;
           stats.bloodpoints = 0;
+          stats.history = [0];
         });
 
-        activeMatchCommitted = false; // Nueva partida iniciada
-        renderCounters(); // Redibujar contadores (gráfica estable)
+        activeMatchCommitted = false; 
+        window.userChartOffset = 0; // Reiniciar slider offset
+        renderCounters(); 
 
         if (supabaseClient) {
           try {
@@ -518,26 +490,24 @@ function initCalculator() {
                 dcs: 0,
                 escapes: 0,
                 first_deaths: 0,
-                bloodpoints: 0
+                bloodpoints: 0,
+                history: "[0]"
               })
               .in("id", ids);
-            showToast("Marcadores de la tabla reiniciados.", "success");
+            showToast("Calculadora y Gráfica reiniciadas a cero.", "info");
           } catch (err) {
             console.error(err);
           }
         } else {
           saveData();
-          showToast("Marcadores locales reiniciados.", "success");
+          showToast("Calculadora local restablecida.", "info");
         }
       }
     });
   }
 
   // 6. Botón FINAL (Registra partida, calcula puntos y actualiza gráfica)
-  const modalRecap = document.getElementById("final-recap-modal");
   const btnFinalTrigger = document.getElementById("btn-final-all");
-  const btnCloseRecap = document.getElementById("btn-recap-close");
-
   if (btnFinalTrigger) {
     btnFinalTrigger.addEventListener("click", async () => {
       // 1. Calcular y actualizar el historial de la gráfica
@@ -561,7 +531,13 @@ function initCalculator() {
       });
 
       activeMatchCommitted = true;
-      renderCounters(); // Redibujar contadores y actualizar gráfica
+      
+      // Auto-desplazar slider de historial al final para ver el nuevo punto
+      const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
+      const windowSize = 6;
+      window.userChartOffset = Math.max(0, maxL - windowSize);
+
+      renderCounters(); // Redibujar contadores y actualizar gráfica y sidebar
 
       // 2. Subir el historial de la gráfica a Supabase o Local
       if (supabaseClient) {
@@ -573,26 +549,14 @@ function initCalculator() {
               .update({ history: JSON.stringify(p.stats.history) })
               .eq("id", p.id);
           }
-          showToast("¡Gráfica actualizada con el final de partida!", "success");
+          showToast("¡Partida registrada y gráfica actualizada!", "success");
         } catch (err) {
           console.error(err);
         }
       } else {
         saveData();
-        showToast("Historial guardado localmente.", "success");
+        showToast("Partida registrada en local.", "success");
       }
-
-      // 3. Mostrar el recuento gracioso
-      if (modalRecap) {
-        calculateFinalRecap();
-        modalRecap.classList.add("show");
-      }
-    });
-  }
-
-  if (btnCloseRecap && modalRecap) {
-    btnCloseRecap.addEventListener("click", () => {
-      modalRecap.classList.remove("show");
     });
   }
 }
@@ -607,39 +571,39 @@ function calculateFinalRecap() {
   const categories = [
     {
       key: "totalScore",
-      title: "👑 EL CAMPEÓN DE LA SESIÓN",
-      desc: "El sobreviviente definitivo. Dominó la tabla con el mayor puntaje de rango total.",
-      suffix: "PTS RANGO"
+      title: "👑 EL CAMPEÓN",
+      desc: "El sobreviviente definitivo. Líder del ranking total.",
+      suffix: "PTS"
     },
     {
       key: "escapes",
-      title: "🏆 EL MVP",
-      desc: "El que sabe para que sirven las puertas de salida, sacando la cara por el equipo.",
-      suffix: "ESCAPE"
+      title: "🏆 MVP ESCAPES",
+      desc: "El que sabe salir por las puertas.",
+      suffix: "ESC"
     },
     {
       key: "dcs",
-      title: "🔌 EL ROMPE-TOBILLOS DE KILLERS",
-      desc: "El terror del Asesino. Lo hizo halar el cable.",
-      suffix: "KILLER DC"
+      title: "🔌 CABLE PULLER",
+      desc: "Hizo desconectar al killer.",
+      suffix: "DC"
     },
     {
       key: "moris",
-      title: "💀 EL CATADOR DE MORIS",
-      desc: "El cliente premium de los asesinatos personalizados. Siempre listo para salir en su foto de recuerdo.",
-      suffix: "MEMENTO MORI"
+      title: "💀 CATADOR DE MORIS",
+      desc: "Cliente premium de la muerte.",
+      suffix: "MORI"
     },
     {
       key: "firstDeaths",
       title: "📦 EL BULTO",
-      desc: "El saco de boxeo oficial. Corre a los brazos del killer a la primera.",
-      suffix: "FIRST DEATH"
+      desc: "Saco de boxeo oficial.",
+      suffix: "MUERTO"
     },
     {
       key: "bloodpoints",
-      title: "💰 EL BANQUERO DE LA ENTIDAD",
-      desc: "El que se fue con los bolsillos llenos de puntos de sangre. Aportando al máximo.",
-      suffix: "BLOODPOINTS"
+      title: "💰 EL BANQUERO",
+      desc: "Aportó más puntos de sangre.",
+      suffix: "BLOOD"
     }
   ];
 
@@ -707,7 +671,7 @@ function calculateFinalRecap() {
 
     const itemHtml = `
       <div class="recap-item">
-        <div>
+        <div class="recap-item-header">
           <span class="recap-funny-title">${cat.title}</span>
           <div class="recap-winner-name">${winnerName}</div>
           <div class="recap-winner-avatars-box">
@@ -783,11 +747,15 @@ function renderCounters() {
         });
       }
     }
+
+    // 3. Recalcular y actualizar la columna de ganadores permanente de la derecha
+    calculateFinalRecap();
+
   } catch (err) {
     console.error("Error rendering counters:", err);
   }
 
-  // 3. Dibujar la gráfica de líneas estilo Mario Party
+  // 4. Dibujar la gráfica de líneas estilo Mario Party
   drawLineChart();
 }
 
@@ -799,14 +767,43 @@ function drawLineChart() {
 
     const windowSize = 6;
     const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
-    const startIndex = Math.max(0, maxL - windowSize);
-    const currentWindowLength = maxL - startIndex;
+    
+    // Configurar el slider de historial
+    const slider = document.getElementById("chart-history-slider");
+    const sliderValLabel = document.getElementById("chart-slider-value");
+    
+    let startIndex = Math.max(0, maxL - windowSize);
+    const maxOffset = Math.max(0, maxL - windowSize);
 
-    // Encontrar rango de puntuaciones visibles
+    if (slider) {
+      slider.max = maxOffset;
+      if (maxOffset === 0) {
+        slider.disabled = true;
+        slider.value = 0;
+        startIndex = 0;
+      } else {
+        slider.disabled = false;
+        // Si el usuario no ha arrastrado manualmente o si supera el límite, mover al final
+        if (typeof window.userChartOffset === "undefined" || window.userChartOffset > maxOffset) {
+          window.userChartOffset = maxOffset;
+        }
+        slider.value = window.userChartOffset;
+        startIndex = window.userChartOffset;
+      }
+
+      if (sliderValLabel) {
+        const endIdx = Math.min(startIndex + windowSize - 1, maxL - 1);
+        sliderValLabel.textContent = `Partidas ${startIndex} - ${endIdx}`;
+      }
+    }
+
+    const currentWindowLength = Math.min(windowSize, maxL - startIndex);
+
+    // Encontrar rango de puntuaciones visibles en la ventana deslizante
     let visibleScores = [];
     playersData.forEach(p => {
       if (!p || !p.stats || !p.stats.history) return;
-      const scores = (p.stats.history || [0]).slice(startIndex);
+      const scores = p.stats.history.slice(startIndex, startIndex + windowSize);
       visibleScores = visibleScores.concat(scores);
     });
 
@@ -957,10 +954,10 @@ function drawLineChart() {
       { class: "miancor", avatar: "char_miancor.png" }
     ];
 
-    // Calcular las posiciones finales del extremo de la ventana deslizable
+    // Calcular las posiciones finales del extremo de la ventana
     const finalPositions = playersData.map((p, idx) => {
       if (!p || !p.stats || !p.stats.history) return { idx, finalScore: 0, x: paddingLeft, y: paddingTop + graphHeight };
-      const scores = p.stats.history.slice(startIndex);
+      const scores = p.stats.history.slice(startIndex, startIndex + windowSize);
       const finalScore = scores[scores.length - 1] || 0;
       
       const x = paddingLeft + ((scores.length - 1) / (gridCols - 1)) * graphWidth;
@@ -982,7 +979,7 @@ function drawLineChart() {
     playersData.forEach((p, idx) => {
       if (!p || !p.stats || !p.stats.history) return;
       const config = playerConfigs[idx];
-      const scores = p.stats.history.slice(startIndex);
+      const scores = p.stats.history.slice(startIndex, startIndex + windowSize);
 
       // Path
       let path = svg.querySelector(`#chart-path-${config.class}`);
