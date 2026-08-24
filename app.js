@@ -20,19 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- INICIAR CLIENTE SUPABASE ---
 function initSupabase() {
-  // Si el usuario desconectó explícitamente la base de datos, ir a modo local offline
   if (localStorage.getItem("dbd_supabase_disabled") === "true") {
     supabaseClient = null;
     return false;
   }
 
-  // Intentar obtener valores personalizados de LocalStorage, si no usar los valores por defecto
   const url = localStorage.getItem("dbd_supabase_url") || DEFAULT_SUPABASE_URL;
   const key = localStorage.getItem("dbd_supabase_key") || DEFAULT_SUPABASE_KEY;
 
   if (url && key) {
     try {
-      // Instanciar cliente desde la librería cargada por CDN (global 'supabase')
       supabaseClient = window.supabase.createClient(url, key);
       return true;
     } catch (e) {
@@ -50,7 +47,6 @@ async function loadData() {
 
   if (hasSupabase) {
     try {
-      // Intentar consultar la tabla de jugadores
       const { data, error } = await supabaseClient
         .from("players")
         .select("*")
@@ -60,6 +56,7 @@ async function loadData() {
 
       if (data && data.length === 4) {
         playersData = data.map(row => ({
+          id: row.id, // ID único real de base de datos
           name: row.name,
           stats: {
             moris: row.moris || 0,
@@ -73,10 +70,9 @@ async function loadData() {
         renderCounters();
         subscribeRealtime();
         showToast("Conectado a Supabase en tiempo real.", "success");
-        return; // Carga exitosa desde Supabase
+        return;
       } else {
         console.warn("Supabase no contiene exactamente 4 jugadores. Intentando inicializar tabla...");
-        // Intentar inicializar tabla vacía
         await pushAllDataToSupabase();
       }
     } catch (err) {
@@ -85,7 +81,6 @@ async function loadData() {
     }
   }
 
-  // Fallback a LocalStorage si Supabase falla o no está configurado
   loadFromLocalStorage();
 }
 
@@ -95,10 +90,10 @@ function loadFromLocalStorage() {
     try {
       playersData = JSON.parse(savedData);
       
-      // Sanitizar datos y validar nombres fijos del grupo
       playersData.forEach((player, idx) => {
         const defaultNames = ["VITIGO", "VINZENT", "JOSEDVA", "MIANCOR"];
-        player.name = defaultNames[idx]; // Forzar nombres estáticos
+        player.name = defaultNames[idx];
+        player.id = player.id !== undefined ? player.id : idx; // Asegurar ID
 
         if (!player.stats) {
           player.stats = { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] };
@@ -126,10 +121,10 @@ function loadFromLocalStorage() {
 
 function initializeDefaultData() {
   playersData = [
-    { name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
-    { name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
-    { name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
-    { name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } }
+    { id: 0, name: "VITIGO", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
+    { id: 1, name: "VINZENT", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
+    { id: 2, name: "JOSEDVA", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } },
+    { id: 3, name: "MIANCOR", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } }
   ];
   saveData();
 }
@@ -143,9 +138,9 @@ async function pushAllDataToSupabase() {
   if (!supabaseClient) return;
   try {
     for (let i = 0; i < 4; i++) {
-      const p = playersData[i] || { name: "", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } };
+      const p = playersData[i] || { id: i, name: "", stats: { moris: 0, dcs: 0, escapes: 0, firstDeaths: 0, bloodpoints: 0, history: [0] } };
       await supabaseClient.from("players").upsert({
-        id: i,
+        id: p.id,
         name: p.name,
         moris: p.stats.moris,
         dcs: p.stats.dcs,
@@ -175,8 +170,9 @@ function subscribeRealtime() {
       { event: "UPDATE", schema: "public", table: "players" },
       payload => {
         const updatedRow = payload.new;
-        const idx = updatedRow.id;
-        if (playersData[idx]) {
+        // Búsqueda robusta por ID en lugar de asunción de índice directo
+        const idx = playersData.findIndex(p => p.id === updatedRow.id);
+        if (idx !== -1) {
           playersData[idx].stats = {
             moris: updatedRow.moris || 0,
             dcs: updatedRow.dcs || 0,
@@ -194,31 +190,39 @@ function subscribeRealtime() {
 
 // --- ENVIAR ACTUALIZACIÓN DE CONTADORES A BASE DE DATOS ---
 async function updatePlayerStat(playerIdx, statName, value) {
-  if (supabaseClient) {
-    const dbColName = statName === "firstDeaths" ? "first_deaths" : statName;
-    let dbValue = value;
-    if (statName === "history") {
-      dbValue = JSON.stringify(value);
+  if (playersData[playerIdx] && playersData[playerIdx].stats) {
+    const p = playersData[playerIdx];
+    const stats = p.stats;
+
+    // Recalcular historial localmente de inmediato para que la gráfica reaccione
+    const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+    const L = stats.history.length;
+    const baseScore = L >= 2 ? stats.history[L - 2] : 0;
+    stats.history[L - 1] = baseScore + currentMatchScore;
+
+    if (supabaseClient && p.id !== undefined) {
+      const dbColName = statName === "firstDeaths" ? "first_deaths" : statName;
+      try {
+        const { error } = await supabaseClient
+          .from("players")
+          .update({ 
+            [dbColName]: value,
+            history: JSON.stringify(stats.history) 
+          })
+          .eq("id", p.id);
+        
+        if (error) throw error;
+      } catch (err) {
+        console.error("Error actualizando Supabase en vivo:", err);
+      }
+    } else {
+      saveData();
     }
-    try {
-      const { error } = await supabaseClient
-        .from("players")
-        .update({ [dbColName]: dbValue })
-        .eq("id", playerIdx);
-      
-      if (error) throw error;
-    } catch (err) {
-      console.error("Error actualizando Supabase en vivo:", err);
-    }
-  } else {
-    // Modo local offline
-    saveData();
   }
 }
 
 // --- AMBIENTE DE LA HOGUERA (BRASAS FLOTANTES) ---
 function initAtmosphere() {
-  // Desactivar animaciones de partículas pesadas en móviles para optimizar rendimiento
   if (window.innerWidth < 820) {
     console.log("Rendimiento: Atmósfera desactivada en móviles.");
     return;
@@ -263,7 +267,7 @@ function createEmber(container, isInitial = false) {
   }, (duration + (isInitial ? 0 : delay)) * 1000);
 }
 
-// --- SISTEMA DE AUDIO DEL JUEGO (REPRODUCCIÓN DE MP3 LOCALES SI EXISTEN) ---
+// --- SISTEMA DE AUDIO DEL JUEGO ---
 function playAudioFor(statName) {
   try {
     let filename = "";
@@ -275,26 +279,20 @@ function playAudioFor(statName) {
     if (filename) {
       const audio = new Audio(filename);
       audio.volume = 0.5;
-      audio.play().catch(() => {
-        // Falla silenciosa si el archivo no existe
-      });
+      audio.play().catch(() => {});
     }
-  } catch (err) {
-    // Evitar errores de consola
-  }
+  } catch (err) {}
 }
 
-// --- ANIMACIÓN FLOTANTE (VUELO DESDE EL CENTRO HACIA LA FILA CORRESPONDIENTE) ---
+// --- ANIMACIÓN FLOTANTE (VUELO) ---
 function triggerFlyAnimation(imgSrc, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // 1. Obtener las coordenadas del contenedor destino
   const rect = container.getBoundingClientRect();
   const targetX = rect.left + rect.width / 2;
   const targetY = rect.top + rect.height / 2;
 
-  // 2. Crear clon flotante temporal
   const flyIcon = document.createElement("img");
   flyIcon.src = imgSrc;
   flyIcon.className = "floating-fly-icon";
@@ -303,7 +301,6 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
   document.body.appendChild(flyIcon);
 
-  // 3. Eliminar el clon temporal cuando termine el vuelo (1250ms)
   setTimeout(() => {
     flyIcon.remove();
   }, 1250);
@@ -311,7 +308,7 @@ function triggerFlyAnimation(imgSrc, containerId) {
 
 // --- CONFIGURACIÓN DE LA CALCULADORA Y SCOREBOARD ---
 function initCalculator() {
-  // 1. Click sobre el icono de referencia para Sumar (Clic Izquierdo) o Restar (Clic Derecho)
+  // 1. Eventos Click en Marcadores (+ / -)
   const iconButtons = document.querySelectorAll(".btn-icon-calc");
   iconButtons.forEach(btn => {
     btn.addEventListener("click", (e) => {
@@ -320,45 +317,42 @@ function initCalculator() {
       const statName = btn.getAttribute("data-stat");
 
       if (playersData[playerIdx] && playersData[playerIdx].stats) {
-        // Disparar animación de vuelo desde el centro de la pantalla
         const imgSrc = btn.querySelector("img").getAttribute("src");
         const containerId = `val-${playerIdx}-${statName}`;
         triggerFlyAnimation(imgSrc, containerId);
 
-        // Sumar local (actualización optimista instantánea)
         playersData[playerIdx].stats[statName]++;
         renderCounters();
-        playAudioFor(statName); // Reproducir audio local
+        playAudioFor(statName);
         
-        // Sincronizar en la nube o LocalStorage
         updatePlayerStat(playerIdx, statName, playersData[playerIdx].stats[statName]);
       }
     });
 
     btn.addEventListener("contextmenu", (e) => {
-      e.preventDefault(); // Evitar menú de click derecho nativo
+      e.preventDefault();
       const playerIdx = parseInt(btn.getAttribute("data-player"));
       const statName = btn.getAttribute("data-stat");
 
       if (playersData[playerIdx] && playersData[playerIdx].stats) {
         if (playersData[playerIdx].stats[statName] > 0) {
-          // Restar local (optimista)
           playersData[playerIdx].stats[statName]--;
           renderCounters();
           playAudioFor(statName);
 
-          // Sincronizar
           updatePlayerStat(playerIdx, statName, playersData[playerIdx].stats[statName]);
         }
       }
     });
   });
 
-  // 2. Botón "REINICIAR TODO" (Vacía contadores y limpia el historial de rango a [0])
+  // 2. Controladores del Modal de RESET unificado con opciones verticales
   const modalReset = document.getElementById("reset-confirm-modal");
-  const btnCancelReset = document.getElementById("btn-modal-cancel");
-  const btnConfirmReset = document.getElementById("btn-modal-confirm");
   const btnResetTrigger = document.getElementById("btn-reset-all");
+
+  const btnResetNextMatch = document.getElementById("btn-reset-next-match");
+  const btnResetClearAll = document.getElementById("btn-reset-clear-all");
+  const btnResetCancel = document.getElementById("btn-reset-cancel");
 
   if (btnResetTrigger && modalReset) {
     btnResetTrigger.addEventListener("click", () => {
@@ -366,81 +360,29 @@ function initCalculator() {
     });
   }
 
-  if (btnCancelReset) {
-    btnCancelReset.addEventListener("click", () => {
-      modalReset.classList.remove("show");
-    });
-  }
-
-  if (btnConfirmReset) {
-    btnConfirmReset.addEventListener("click", async () => {
-      // Reinicio local completo
-      playersData.forEach(player => {
-        player.stats.moris = 0;
-        player.stats.dcs = 0;
-        player.stats.escapes = 0;
-        player.stats.firstDeaths = 0;
-        player.stats.bloodpoints = 0;
-        player.stats.history = [0]; // Volver a empezar
-      });
-      
-      localStorage.removeItem("dbd_last_match_counters");
-      renderCounters();
+  // Opción A: Siguiente Partida
+  if (btnResetNextMatch) {
+    btnResetNextMatch.addEventListener("click", async () => {
       modalReset.classList.remove("show");
 
-      // Sincronizar reinicio
-      if (supabaseClient) {
-        try {
-          const { error } = await supabaseClient
-            .from("players")
-            .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0, history: "[0]" })
-            .in("id", [0, 1, 2, 3]);
-          if (error) throw error;
-        } catch (err) {
-          console.error("Error al reiniciar datos en Supabase:", err);
-        }
-      } else {
-        saveData();
-      }
-      
-      updateUndoButtonVisibility();
-      showToast("Toda la sesión e historial han sido reiniciados.", "info");
-    });
-  }
-
-  // 3. Botón "REGISTRAR PARTIDA" (Registra scores en historial y resetea marcadores a 0)
-  const btnRecordMatch = document.getElementById("btn-record-match");
-  if (btnRecordMatch) {
-    btnRecordMatch.addEventListener("click", async () => {
-      // 1. Guardar backup para poder deshacer
-      const backupCounters = playersData.map(p => ({
-        moris: p.stats.moris,
-        dcs: p.stats.dcs,
-        escapes: p.stats.escapes,
-        firstDeaths: p.stats.firstDeaths,
-        bloodpoints: p.stats.bloodpoints
-      }));
-      localStorage.setItem("dbd_last_match_counters", JSON.stringify(backupCounters));
-
-      // 2. Calcular acumulados e incorporar a historiales
       playersData.forEach(p => {
-        const currentMatchScore = (p.stats.escapes * 5) - (p.stats.moris * 2) - (p.stats.firstDeaths * 5) + (p.stats.bloodpoints * 8) + (p.stats.dcs * 11);
-        const lastCumulativeScore = p.stats.history[p.stats.history.length - 1] || 0;
-        const newCumulativeScore = lastCumulativeScore + currentMatchScore;
-        
-        p.stats.history.push(newCumulativeScore);
+        const stats = p.stats;
+        const L = stats.history.length;
+        const currentScore = stats.history[L - 1] || 0;
 
-        // Limpiar contadores de la partida actual
-        p.stats.moris = 0;
-        p.stats.dcs = 0;
-        p.stats.escapes = 0;
-        p.stats.firstDeaths = 0;
-        p.stats.bloodpoints = 0;
+        // Añadir una nueva columna de partida al historial con el acumulado actual
+        stats.history.push(currentScore);
+
+        // Vaciar contadores de partida actual en la pantalla
+        stats.moris = 0;
+        stats.dcs = 0;
+        stats.escapes = 0;
+        stats.firstDeaths = 0;
+        stats.bloodpoints = 0;
       });
 
       renderCounters();
 
-      // 3. Sincronizar en la nube o LocalStorage
       if (supabaseClient) {
         try {
           for (let i = 0; i < 4; i++) {
@@ -455,83 +397,64 @@ function initCalculator() {
                 bloodpoints: 0,
                 history: JSON.stringify(p.stats.history)
               })
-              .eq("id", i);
+              .eq("id", p.id);
           }
-          showToast("Partida registrada e historial actualizado.", "success");
+          showToast("¡Partida registrada! Nueva ronda iniciada en la gráfica.", "success");
         } catch (err) {
-          console.error("Error al registrar partida en Supabase:", err);
-          showToast("Registrado localmente (Fallo Supabase).", "info");
+          console.error("Error al pasar de partida en Supabase:", err);
         }
       } else {
         saveData();
-        showToast("Partida registrada localmente.", "success");
+        showToast("Partida registrada localmente. Nueva ronda lista.", "success");
       }
-
-      updateUndoButtonVisibility();
     });
   }
 
-  // 4. Botón "DESHACER" (Quita la última entrada del historial y restaura marcadores anteriores)
-  const btnUndoMatch = document.getElementById("btn-undo-match");
-  if (btnUndoMatch) {
-    btnUndoMatch.addEventListener("click", async () => {
-      const backupStr = localStorage.getItem("dbd_last_match_counters");
-      if (!backupStr) return;
+  // Opción B: Reiniciar Sesión
+  if (btnResetClearAll) {
+    btnResetClearAll.addEventListener("click", async () => {
+      modalReset.classList.remove("show");
 
-      if (confirm("¿Deshacer la última partida registrada y recuperar sus marcadores?")) {
-        const backup = JSON.parse(backupStr);
-
-        playersData.forEach((p, idx) => {
-          // Quitar el último punto del historial
-          if (p.stats.history.length > 1) {
-            p.stats.history.pop();
-          }
-          // Restaurar marcadores respaldados
-          const bk = backup[idx];
-          if (bk) {
-            p.stats.moris = bk.moris;
-            p.stats.dcs = bk.dcs;
-            p.stats.escapes = bk.escapes;
-            p.stats.firstDeaths = bk.firstDeaths;
-            p.stats.bloodpoints = bk.bloodpoints;
-          }
+      if (confirm("¿Reiniciar toda la sesión e historial de la gráfica a cero?")) {
+        playersData.forEach(p => {
+          p.stats.moris = 0;
+          p.stats.dcs = 0;
+          p.stats.escapes = 0;
+          p.stats.firstDeaths = 0;
+          p.stats.bloodpoints = 0;
+          p.stats.history = [0];
         });
 
-        localStorage.removeItem("dbd_last_match_counters");
         renderCounters();
 
-        // Sincronizar en Supabase o local
         if (supabaseClient) {
           try {
-            for (let i = 0; i < 4; i++) {
-              const p = playersData[i];
-              await supabaseClient
-                .from("players")
-                .update({
-                  moris: p.stats.moris,
-                  dcs: p.stats.dcs,
-                  escapes: p.stats.escapes,
-                  first_deaths: p.stats.firstDeaths,
-                  bloodpoints: p.stats.bloodpoints,
-                  history: JSON.stringify(p.stats.history)
-                })
-                .eq("id", i);
-            }
-            showToast("Último registro deshecho correctamente.", "success");
+            const { error } = await supabaseClient
+              .from("players")
+              .update({ moris: 0, dcs: 0, escapes: 0, first_deaths: 0, bloodpoints: 0, history: "[0]" })
+              .in("id", playersData.map(p => p.id));
+            
+            if (error) throw error;
+            showToast("Toda la sesión e historial reiniciados.", "info");
           } catch (err) {
-            console.error("Error al deshacer en Supabase:", err);
+            console.error("Error al reiniciar todo en Supabase:", err);
           }
         } else {
           saveData();
-          showToast("Último registro deshecho localmente.", "success");
+          showToast("Sesión reiniciada localmente.", "info");
         }
-
-        updateUndoButtonVisibility();
       }
     });
   }
 
-  // 5. Control de popup modal de Recuento Final
+  // Opción C: Cancelar
+  if (btnResetCancel) {
+    btnResetCancel.addEventListener("click", () => {
+      modalReset.classList.remove("show");
+    });
+  }
+
+  // 3. Popup Modal de Recuento Final
   const modalRecap = document.getElementById("final-recap-modal");
   const btnFinalTrigger = document.getElementById("btn-final-all");
   const btnCloseRecap = document.getElementById("btn-recap-close");
@@ -549,7 +472,7 @@ function initCalculator() {
     });
   }
 
-  // 6. Control de popup modal de Ajustes (Supabase)
+  // 4. Modal de Ajustes (Supabase)
   const modalSettings = document.getElementById("settings-modal");
   const btnSettingsTrigger = document.getElementById("btn-settings");
   const btnCloseSettings = document.getElementById("btn-settings-close");
@@ -588,7 +511,7 @@ function initCalculator() {
       localStorage.setItem("dbd_supabase_key", key);
       
       modalSettings.classList.remove("show");
-      loadData(); // Intentar reconectar
+      loadData();
     });
   }
 
@@ -608,21 +531,8 @@ function initCalculator() {
 
       modalSettings.classList.remove("show");
       showToast("Supabase desconectado. Ejecutando en local.", "info");
-      loadFromLocalStorage(); // Volver al LocalStorage local
+      loadFromLocalStorage();
     });
-  }
-}
-
-// --- VISIBILIDAD DEL BOTÓN DESHACER ---
-function updateUndoButtonVisibility() {
-  const btnUndoMatch = document.getElementById("btn-undo-match");
-  if (!btnUndoMatch) return;
-  const backupStr = localStorage.getItem("dbd_last_match_counters");
-  // Mostrar solo si hay un backup registrado y tenemos al menos 2 elementos de historial (Match 0 y Match 1)
-  if (backupStr && playersData[0]?.stats.history.length > 1) {
-    btnUndoMatch.style.display = "block";
-  } else {
-    btnUndoMatch.style.display = "none";
   }
 }
 
@@ -697,7 +607,6 @@ function calculateFinalRecap() {
     return { maxVal, leaders };
   }
 
-  // Helper para mapear avatares
   function getAvatarFor(name) {
     if (name === "VITIGO") return "char_vitigo.png";
     if (name === "VINZENT") return "char_vinzent.png";
@@ -706,7 +615,6 @@ function calculateFinalRecap() {
     return "logo.png";
   }
 
-  // Renderizar cada categoría en mosaico
   categories.forEach(cat => {
     const result = getLeadersFor(cat.key);
     let winnerName = "NADIE";
@@ -715,7 +623,6 @@ function calculateFinalRecap() {
 
     const hasWinner = cat.key === "totalScore" ? true : result.maxVal > 0;
 
-    // Si el valor máximo es válido, renderizar ganadores (con soporte de empates)
     if (hasWinner) {
       winnerName = result.leaders.map(l => l.name).join(" & ");
       scoreText = (cat.key === "totalScore" && result.maxVal > 0 ? "+" : "") + result.maxVal;
@@ -764,6 +671,19 @@ function calculateFinalRecap() {
 function renderCounters() {
   const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
 
+  // 1. Recalcular el valor en vivo del final del historial para cada jugador
+  playersData.forEach(p => {
+    const stats = p.stats;
+    const currentMatchScore = (stats.escapes * 5) - (stats.moris * 2) - (stats.firstDeaths * 5) + (stats.bloodpoints * 8) + (stats.dcs * 11);
+    const L = stats.history.length;
+    const baseScore = L >= 2 ? stats.history[L - 2] : 0;
+    stats.history[L - 1] = baseScore + currentMatchScore;
+  });
+
+  // Guardar localmente
+  saveData();
+
+  // 2. Renderizar iconos repetidos en la interfaz
   for (let i = 0; i < 4; i++) {
     if (playersData[i] && playersData[i].stats) {
       const stats = playersData[i].stats;
@@ -773,10 +693,8 @@ function renderCounters() {
         if (!container) return;
 
         container.innerHTML = "";
-
         const count = stats[stat] || 0;
         
-        // Agregar iconos repetidos
         for (let c = 0; c < count; c++) {
           const img = document.createElement("img");
           
@@ -795,9 +713,8 @@ function renderCounters() {
             if (playersData[i].stats[stat] > 0) {
               playersData[i].stats[stat]--;
               renderCounters();
-              playAudioFor(stat); // Reproducir audio local
+              playAudioFor(stat);
               
-              // Sincronizar
               updatePlayerStat(i, stat, playersData[i].stats[stat]);
             }
           });
@@ -808,9 +725,8 @@ function renderCounters() {
     }
   }
 
-  // Dibujar la gráfica de líneas estilo Mario Party
+  // 3. Dibujar la gráfica de líneas estilo Mario Party
   drawLineChart();
-  updateUndoButtonVisibility();
 }
 
 // --- DIBUJAR GRÁFICA DE LÍNEAS TEMPORAL (ESTILO MARIO PARTY) ---
@@ -828,17 +744,17 @@ function drawLineChart() {
     allScores = allScores.concat(p.stats.history || [0]);
   });
 
-  const minY = Math.min(...allScores, 0); // que siempre incluya el 0 como línea base
-  const maxY = Math.max(...allScores, 5); // que al menos llegue a 5 de altura para dar margen inicial
+  const minY = Math.min(...allScores, 0); 
+  const maxY = Math.max(...allScores, 5); 
 
   const yPadding = Math.max(5, (maxY - minY) * 0.15);
   const yMinLimit = minY - yPadding;
   const yMaxLimit = maxY + yPadding;
 
-  const svgWidth = container.clientWidth || 800;
-  const svgHeight = 260;
+  const svgWidth = container.clientWidth || 400;
+  const svgHeight = container.clientHeight || 380;
 
-  const paddingLeft = 40;
+  const paddingLeft = 32;
   const paddingRight = 45; // margen derecho para los avatares
   const paddingTop = 25;
   const paddingBottom = 30;
@@ -848,7 +764,7 @@ function drawLineChart() {
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
-  svg.setAttribute("height", svgHeight);
+  svg.setAttribute("height", "100%");
   svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
   svg.setAttribute("style", "overflow: visible;");
 
@@ -877,7 +793,7 @@ function drawLineChart() {
   }
 
   // --- 2. DIBUJAR LÍNEAS DE CUADRÍCULA HORIZONTALES (PUNTOS) ---
-  const gridRows = 4;
+  const gridRows = 5;
   for (let i = 0; i < gridRows; i++) {
     const ratio = i / (gridRows - 1);
     const y = paddingTop + ratio * graphHeight;
@@ -892,7 +808,7 @@ function drawLineChart() {
     svg.appendChild(line);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("x", paddingLeft - 10);
+    label.setAttribute("x", paddingLeft - 8);
     label.setAttribute("y", y + 4);
     label.setAttribute("text-anchor", "end");
     label.setAttribute("class", "chart-axis-text-y");
@@ -941,7 +857,7 @@ function drawLineChart() {
     const prev = finalPositions[i - 1];
     const curr = finalPositions[i];
     if (Math.abs(curr.y - prev.y) < 18) {
-      curr.y = prev.y + 18; // Desplazar hacia abajo un poco para que no se superpongan
+      curr.y = prev.y + 18; 
     }
   }
 

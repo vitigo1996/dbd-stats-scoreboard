@@ -27,8 +27,9 @@
       <h1 class="header-title">DEAD BY <span>STATS</span></h1>
     </header>
 
-    <!-- TABLERO DE JUGADORES (4 FILAS) -->
-    <main class="scoreboard-container">
+    <!-- TABLERO DE JUGADORES Y HISTORIAL LATERAL -->
+    <div class="hud-main-layout">
+      <main class="scoreboard-container">
       
       <!-- FILA JUGADOR 1 (VITIGO) -->
       <div class="player-row" data-index="0">
@@ -258,37 +259,37 @@
         </div>
       </div>
 
-      <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN -->
-      <section class="ranking-container">
-        <h3 class="ranking-title">HISTORIAL DE RANGO DE LA SESIÓN</h3>
+      </main>
+
+      <!-- SECCIÓN DE RANKING GENERAL DE LA SESIÓN (LADO DERECHO) -->
+      <aside class="ranking-container">
+        <h3 class="ranking-title">HISTORIAL DE RANGO</h3>
         <div class="ranking-chart-wrapper">
           <div id="line-chart-container">
             <!-- El SVG de la gráfica se inyectará aquí dinámicamente -->
           </div>
         </div>
-      </section>
+      </aside>
 
-    </main>
+    </div>
 
-    <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN -->
+    <!-- PIE DE PÁGINA DE BOTONES DE ACCIÓN (RESET Y FINAL) -->
     <footer class="calculator-footer">
-      <div class="footer-left-buttons">
-        <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all" title="Reiniciar toda la sesión y el historial">REINICIAR TODO</button>
-        <button class="btn-ready-dbd btn-undo-bottom" id="btn-undo-match" title="Deshacer última partida registrada" style="display: none;">DESHACER</button>
-      </div>
-      <button class="btn-ready-dbd btn-record-bottom" id="btn-record-match" title="Registrar partida actual y limpiar contadores">REGISTRAR PARTIDA</button>
-      <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all" title="Ver recuento final">FINAL</button>
+      <button class="btn-ready-dbd btn-reset-bottom" id="btn-reset-all">RESET</button>
+      <button class="btn-ready-dbd btn-final-bottom" id="btn-final-all">FINAL</button>
     </footer>
 
   </div>
 
   <!-- POPUP DE CONFIRMACIÓN DE RESET MODAL -->
   <div id="reset-confirm-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2 class="modal-title">¿Reiniciar marcadores?</h2>
-      <div class="modal-actions">
-        <button id="btn-modal-cancel" class="btn-modal btn-cancel">NO</button>
-        <button id="btn-modal-confirm" class="btn-modal btn-confirm">SÍ</button>
+    <div class="modal-card reset-modal-card">
+      <h2 class="modal-title">MENÚ DE REINICIO</h2>
+      <p class="modal-desc" style="color: #aaa; font-size: 0.9rem; margin-bottom: 1.2rem; text-align: center; font-family: var(--font-body);">Selecciona qué acción deseas realizar con el Scoreboard:</p>
+      <div class="modal-actions-vertical">
+        <button id="btn-reset-next-match" class="btn-modal btn-reset-option option-next-match">SIGUIENTE PARTIDA</button>
+        <button id="btn-reset-clear-all" class="btn-modal btn-reset-option option-clear-all">REINICIAR SESIÓN</button>
+        <button id="btn-reset-cancel" class="btn-modal btn-reset-option option-cancel">CANCELAR</button>
       </div>
     </div>
   </div>
@@ -364,6 +365,6 @@ ON CONFLICT (id) DO NOTHING;</textarea>
   </div>
 
   <!-- SCRIPTS -->
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
