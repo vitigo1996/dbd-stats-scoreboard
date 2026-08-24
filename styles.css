@@ -654,11 +654,12 @@ body {
   padding-bottom: 0.4rem;
 }
 
-/* GRIDS DE MOSAICO 2x2 */
+/* LISTA DE RECUENTO VERTICAL OPTIMIZADA */
 .recap-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); 
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 /* Item del Mosaico */
@@ -667,15 +668,15 @@ body {
   flex-direction: column;
   background: rgba(8, 12, 14, 0.85);
   border: 1px solid var(--color-card-border);
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 4px;
-  gap: 6px;
+  gap: 4px;
   justify-content: space-between;
 }
 
 .recap-funny-title {
   font-family: var(--font-title);
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   color: var(--color-dbd-orange);
   text-shadow: 0 0 5px var(--color-dbd-orange-glow);
   letter-spacing: 1px;
@@ -685,32 +686,32 @@ body {
 
 .recap-winner-name {
   font-family: var(--font-title);
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   color: #ffffff;
   letter-spacing: 1.2px;
   line-height: 1.1;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 /* Contenedor de avatares en caso de empate */
 .recap-winner-avatars-box {
   display: flex;
   flex-direction: row;
-  gap: 6px;
-  margin: 4px 0;
+  gap: 4px;
+  margin: 2px 0;
   flex-wrap: wrap;
 }
 
-/* Retratos de Superviviente (MÁS GRANDES: 70px x 70px) */
+/* Retratos de Superviviente (MÁS PEQUEÑOS: 48px x 48px) */
 .recap-winner-avatar {
-  width: 70px; 
-  height: 70px; 
+  width: 48px; 
+  height: 48px; 
   background-color: #1b2228;
-  border: 2px solid #2d3b45;
+  border: 1.5px solid #2d3b45;
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.8);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
 }
 
 .recap-winner-avatar img {
@@ -998,7 +999,7 @@ body {
 
 /* --- SECCIÓN DE GRÁFICO DE LÍNEAS (ESTILO MARIO PARTY) --- */
 .ranking-container {
-  margin-top: 1.5rem;
+  margin-top: 0;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid #1c242a;
   border-radius: 4px;
