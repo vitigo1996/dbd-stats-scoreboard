@@ -580,19 +580,19 @@ function calculateFinalRecap() {
     },
     {
       key: "dcs",
-      title: "EL ROMPE-TOBILLOS DE KILLERS",
+      title: "ROMPE-TOBILLOS DE KILLERS",
       desc: "El terror del killer. Lo hizo halar el cable.",
       suffix: "KILLER DC"
     },
     {
       key: "moris",
-      title: "EL CATADOR DE MORIS",
+      title: "CATADOR DE MORIS",
       desc: "El cliente premium de los asesinatos en primera persona.",
       suffix: "MEMENTO MORI"
     },
     {
       key: "firstDeaths",
-      title: "EL BULTO",
+      title: "BULTO",
       desc: "El mejor amigo del killer.",
       suffix: "FIRST DEATH"
     }
@@ -664,7 +664,6 @@ function calculateFinalRecap() {
       <div class="recap-item">
         <div class="recap-item-header">
           <span class="recap-funny-title">${cat.title}</span>
-          <div class="recap-winner-name">${winnerName}</div>
           <div class="recap-winner-avatars-box">
             ${avatarsHtml}
           </div>
@@ -685,7 +684,7 @@ function calculateFinalRecap() {
 // --- RENDERIZAR VALORES DE CONTADORES CON ICONOS REPETIDOS ---
 function renderCounters() {
   try {
-    const statsList = ["moris", "dcs", "escapes", "firstDeaths", "bloodpoints"];
+    const statsList = ["moris", "firstDeaths", "dcs", "escapes", "bloodpoints"];
 
     // 1. Alinear y sincronizar longitud temporal de historiales
     const maxL = Math.max(...playersData.map(p => p ? p.stats.history.length : 1), 1);
